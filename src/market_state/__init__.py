@@ -1,12 +1,14 @@
 """Market Regime Monitor.
 
-Phase 1F calculates Trend, short/medium-horizon Momentum, realised volatility,
-and Benchmark Relative Performance, and validates local prices. There is no
-composite directional regime. The Market Regime Snapshot is not included.
+Phase 1G assembles a Market Regime Snapshot from Trend, Momentum, realised
+volatility, and Benchmark Relative Performance. The snapshot adds no finance
+of its own. There is no composite directional regime. What Changed is not
+included.
 """
 
 from market_state.errors import MarketDataError
 from market_state.momentum import MomentumResult, calculate_momentum, classify_momentum
+from market_state.regime import MarketRegimeSnapshot, calculate_market_regime_snapshot
 from market_state.relative_performance import (
     RelativePerformanceResult,
     calculate_relative_performance,
@@ -24,11 +26,13 @@ from market_state.volatility import (
 
 __all__ = [
     "MarketDataError",
+    "MarketRegimeSnapshot",
     "MomentumResult",
     "RelativePerformanceResult",
     "TrendResult",
     "VolatilityClassification",
     "VolatilityResult",
+    "calculate_market_regime_snapshot",
     "calculate_momentum",
     "calculate_relative_performance",
     "calculate_rv21",

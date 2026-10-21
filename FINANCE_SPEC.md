@@ -1,7 +1,7 @@
 # Finance specification — approved V1 model
 
 **Status:** owner-approved V1 finance rules.
-Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Momentum, volatility, relative strength, directional state, and What Changed are specified here and are not implemented.
+Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Volatility, relative strength, directional state, and What Changed are specified here and are not implemented.
 
 These rules replace the provisional Phase 0 proposal. Comparisons are exact. The financial definition uses no tolerance and no epsilon.
 
@@ -100,37 +100,49 @@ Equality of price and SMA50, or of SMA50 and SMA200, fails the strict chain and 
 
 ## M — Momentum
 
-Simple returns:
+V1 Momentum is short/medium-horizon time-series market-state momentum. It asks whether recent adjusted-close movement is positive or negative, and whether the recent per-observation pace is strengthening or weakening relative to the medium-term pace. Trend already represents the slower 50/200 structural direction.
+
+This is not the academic 12-minus-1 equity factor, not a cross-sectional stock-selection factor, and not a 6-month or 12-month institutional momentum signal. Those slower horizons are possible future research. They are not part of V1. The 21- and 63-observation windows are for responsiveness on this flight deck. They are not a claim of a universal institutional standard.
+
+Momentum is not a buy or sell signal, a position size, a volatility-adjusted allocation, or a price forecast. R21 and R63 are not divided by volatility. Volatility and relative strength stay separate instruments. Later portfolio construction may scale by volatility. V1 Momentum does not.
+
+Lookbacks are trading observations, not calendar days. Prices are `adjusted_close`. There is no fill, interpolation, or use of a later observation.
 
 ```text
 R21 = price_t / price_(t-21) - 1
 R63 = price_t / price_(t-63) - 1
+P(n) = ln(price_t / price_(t-n)) / n
+P21 = ln(price_t / price_(t-21)) / 21
+P63 = ln(price_t / price_(t-63)) / 63
+G(n) = exp(P(n)) - 1
 ```
 
-Geometric daily pace, used only when both returns are strictly positive or both are strictly negative:
+P21 versus P63 decides whether pace is strengthening or weakening. G(n) is the earlier geometric daily rate. The exponential is strictly increasing, so P21 > P63 is the same ordering as G21 > G63. Pace is not annualised. Comparisons are exact. There is no tolerance and no rounding before classification.
 
-```text
-G(n) = (price_t / price_(t-n))^(1/n) - 1
-```
+The calculation uses only the requested market on or before the exact as-of date. A missing date is not replaced by a neighbour. Later rows are ignored and are not borrowed to meet the history minimum.
+
+`price_(t-63)` is 63 observations before `t`, so the Momentum unit needs at least 64 observations through the as-of date. 63 observations fail with `DATA_INSUFFICIENT_HISTORY`. The market-data validator still requires 273 observations for a full market state.
 
 | State | Rule | Reason code |
 |---|---|---|
-| Accelerating | R21 > 0 and R63 > 0 and G21 > G63 | `MOMENTUM_ACCELERATING` |
-| Positive | R21 > 0 and R63 > 0 and G21 <= G63 | `MOMENTUM_POSITIVE` |
+| Accelerating | R21 > 0 and R63 > 0 and P21 > P63 | `MOMENTUM_ACCELERATING` |
+| Positive | R21 > 0 and R63 > 0 and P21 <= P63 | `MOMENTUM_POSITIVE` |
 | Mixed | either return equals 0, or R21 and R63 have opposite signs | `MOMENTUM_MIXED` |
-| Negative | R21 < 0 and R63 < 0 and G21 >= G63 | `MOMENTUM_NEGATIVE` |
-| Deteriorating | R21 < 0 and R63 < 0 and G21 < G63 | `MOMENTUM_DETERIORATING` |
+| Negative | R21 < 0 and R63 < 0 and P21 >= P63 | `MOMENTUM_NEGATIVE` |
+| Deteriorating | R21 < 0 and R63 < 0 and P21 < P63 | `MOMENTUM_DETERIORATING` |
 
-Equal pace is not mixed. G21 == G63 with both returns positive is Positive. G21 == G63 with both returns negative is Negative.
+Negative means both horizons are negative and the recent pace is equal to, or less negative than, the medium-term pace. Deteriorating means both are negative and the recent pace is more negative than the medium-term pace.
+
+Equal pace is not mixed. P21 == P63 with both returns positive is Positive. P21 == P63 with both returns negative is Negative.
 
 The sign pairs cover every combination:
 
 - any zero return, including both zero: Mixed
 - opposite nonzero signs: Mixed
-- both positive: Accelerating or Positive, split by G21 > G63 versus G21 <= G63
-- both negative: Deteriorating or Negative, split by G21 < G63 versus G21 >= G63
+- both positive: Accelerating or Positive, split by P21 > P63 versus P21 <= P63
+- both negative: Deteriorating or Negative, split by P21 < P63 versus P21 >= P63
 
-No pair of states matches the same returns.
+No pair of states matches the same returns. The calculation owns these formulas. Raw panel validity stays with market-data validation.
 
 Momentum direction, used only by the directional table:
 

@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 1B — Trend instrument implemented.
+Phase 1C — Momentum instrument implemented.
 
 ## What exists
 
@@ -15,7 +15,8 @@ Phase 1B — Trend instrument implemented.
 - Acceptance cases in `GOLDEN_CASES.md`
 - A local Python package, `market_state`, with configuration and price validation
 - The Trend instrument in `src/market_state/trend.py`
-- Pytest coverage for validation and Trend
+- The Momentum instrument in `src/market_state/momentum.py`
+- Pytest coverage for validation, Trend, and Momentum
 - This file, plus the interface concept and the read-only Windows/Mac plan
 
 ## History rule
@@ -42,13 +43,14 @@ What Changed itself is not implemented. Phase 1A only enforces the 273-observati
 
 - Validation: implemented
 - Trend: implemented
-- Momentum: not implemented
+- Momentum: implemented
 - Volatility: not implemented
 - Relative Strength: not implemented
 - Directional market state: not implemented
 - What Changed: not implemented
 - UI: not implemented
 - Live or vendor market data: not implemented
+- Backtesting: not implemented
 - Mac integration: not authorised
 - GitHub publication: none
 
@@ -62,4 +64,4 @@ What Changed itself is not implemented. Phase 1A only enforces the 273-observati
 
 ## Next approved action
 
-Stop at Phase 1B. Do not start Momentum or any other instrument until that phase is authorised.
+Stop at Phase 1C. Do not start Volatility or any other instrument until that phase is authorised.

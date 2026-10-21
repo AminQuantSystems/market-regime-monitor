@@ -143,11 +143,12 @@ A Trend calculation with 200 observations is accepted. 199 observations fail wit
 price_t = 121
 price_(t-21) = 100
 price_(t-63) = 110
-R21 = 0.21
-R63 = 0.10
+R21 = 121 / 100 - 1 = 0.21
+R63 = 121 / 110 - 1 = 0.10
+P21 = ln(1.21) / 21
+P63 = ln(1.10) / 63
+P21 > P63
 ```
-
-Both returns are positive. `ln(1.21) / 21 > ln(1.10) / 63`, so G21 > G63.
 
 Expected: Accelerating, `MOMENTUM_ACCELERATING`.
 
@@ -158,16 +159,27 @@ price_t = 200
 price_(t-21) = 198
 price_(t-63) = 100
 R21 = 200 / 198 - 1 > 0
-R63 = 1
+R63 = 200 / 100 - 1 = 1
+P21 = ln(200 / 198) / 21
+P63 = ln(2) / 63
+P21 < P63
 ```
-
-`ln(200 / 198) / 21 < ln(2) / 63`, so G21 <= G63.
 
 Expected: Positive, `MOMENTUM_POSITIVE`.
 
-### Equal pace
+### Equal positive pace
 
-A constant per-observation growth factor of 1.01 for 63 steps. G21 and G63 are the same real number, and both returns are positive.
+```text
+price_t = 27
+price_(t-21) = 9
+price_(t-63) = 1
+R21 = 27 / 9 - 1 = 2
+R63 = 27 / 1 - 1 = 26
+P21 = ln(3) / 21
+P63 = ln(27) / 63
+```
+
+27 = 3³ and 63 = 3 × 21, so the two paces are the same number. `math.log` evaluates them as equal.
 
 Expected: Positive, `MOMENTUM_POSITIVE`. Equal pace is not Mixed and not Accelerating.
 
@@ -177,11 +189,13 @@ Expected: Positive, `MOMENTUM_POSITIVE`. Equal pace is not Mixed and not Acceler
 price_t = 100
 price_(t-21) = 90
 price_(t-63) = 110
-R21 > 0
-R63 < 0
+R21 = 100 / 90 - 1 > 0
+R63 = 100 / 110 - 1 < 0
 ```
 
-Expected: Mixed, `MOMENTUM_MIXED`. Geometric pace is not consulted.
+Expected: Mixed, `MOMENTUM_MIXED`. Pace is not consulted.
+
+The mirror, `price_t = 100`, `price_(t-21) = 110`, `price_(t-63) = 90`, has R21 < 0 and R63 > 0. That is also Mixed, `MOMENTUM_MIXED`.
 
 ## 6. Momentum Mixed via exact zero
 
@@ -190,10 +204,12 @@ price_t = 100
 price_(t-21) = 100
 price_(t-63) = 80
 R21 = 0
-R63 = 0.25
+R63 = 100 / 80 - 1 = 0.25
 ```
 
 Expected: Mixed, `MOMENTUM_MIXED`.
+
+R63 = 0 is the same state. One construction is `price_t = 100`, `price_(t-21) = 80`, `price_(t-63) = 100`.
 
 Both returns zero, a constant price over 63 observations, is the same state and the same reason code.
 
@@ -203,15 +219,30 @@ Both returns zero, a constant price over 63 observations, is the same state and 
 price_t = 90
 price_(t-21) = 91
 price_(t-63) = 150
-R21 < 0
-R63 < 0
+R21 = 90 / 91 - 1 < 0
+R63 = 90 / 150 - 1 < 0
+P21 = ln(90 / 91) / 21
+P63 = ln(90 / 150) / 63
+P21 > P63
 ```
 
-`ln(90 / 91) / 21 > ln(90 / 150) / 63`, so G21 >= G63. The shorter decline is slower than the longer decline.
+The recent decline is slower than the medium-term decline, so the recent pace is less negative.
 
 Expected: Negative, `MOMENTUM_NEGATIVE`.
 
-A constant per-observation factor of 0.99 for 63 steps has G21 == G63 and both returns negative. That equal-pace case is also Negative.
+### Equal negative pace
+
+```text
+price_t = 1
+price_(t-21) = 3
+price_(t-63) = 27
+R21 = 1 / 3 - 1 < 0
+R63 = 1 / 27 - 1 < 0
+P21 = ln(1 / 3) / 21
+P63 = ln(1 / 27) / 63
+```
+
+These paces are the same number. Expected: Negative, `MOMENTUM_NEGATIVE`.
 
 ## 8. Momentum Deteriorating
 
@@ -219,13 +250,18 @@ A constant per-observation factor of 0.99 for 63 steps has G21 == G63 and both r
 price_t = 70
 price_(t-21) = 100
 price_(t-63) = 110
-R21 = -0.30
+R21 = 70 / 100 - 1 = -0.30
 R63 = 70 / 110 - 1 < 0
+P21 = ln(0.70) / 21
+P63 = ln(70 / 110) / 63
+P21 < P63
 ```
 
-`ln(0.70) / 21 < ln(70 / 110) / 63`, so G21 < G63. The shorter decline is faster.
+The recent decline is faster.
 
 Expected: Deteriorating, `MOMENTUM_DETERIORATING`.
+
+A Momentum calculation with 64 observations is accepted. 63 observations fail with `DATA_INSUFFICIENT_HISTORY`. An as-of date that is not in the market's series fails and is not replaced. Rows after the as-of date do not enter either return or either pace.
 
 ## 9. Volatility percentile boundaries
 

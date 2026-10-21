@@ -282,3 +282,12 @@ def test_classifier_rejects_invalid_direct_inputs(value):
         classify_momentum(value, 0.1, 0.01, 0.01)
 
     assert error.value.code == "DATA_INVALID_PRICE"
+
+
+def test_underflowing_price_ratio_raises_market_data_error():
+    frame = history_from(1e-300, 1e300, 1e300)
+
+    with pytest.raises(MarketDataError) as error:
+        calculate_momentum(frame, MARKET, as_of(frame))
+
+    assert error.value.code == "DATA_INVALID_PRICE"

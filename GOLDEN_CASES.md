@@ -311,13 +311,19 @@ The same panel. `evaluation_date` is 2026-03-07.
 
 Expected: `DATA_STALE`. No market state is published. The check uses `evaluation_date` and does not read a system clock.
 
-## 20. Missing enabled market rejected
+## 20. Shared date index mismatch
 
-SPY is enabled. Every required series except SPY has a price on the latest shared date. SPY has no row on that date.
+SPY is present in the file. Every required series except SPY has a price on the latest shared date. SPY has no row on that date.
 
-Expected: `DATA_MISSING_MARKET`. The engine does not fall back to an earlier date and does not forward-fill SPY.
+Expected: `DATA_DATE_INDEX_MISMATCH`. The engine does not fall back to an earlier date and does not forward-fill SPY.
 
-A required series that is absent from the file entirely is the same reason code.
+The same code applies when a required series is missing its first date, missing an internal date, or carrying an extra date. It also applies when every required series has 273 rows but the date sets differ.
+
+## 20b. Required market absent entirely
+
+A required series has no rows in the file.
+
+Expected: `DATA_MISSING_MARKET`. This code is not used for a series that is present on a different set of dates.
 
 ## 21. Duplicate date rejected
 
@@ -332,3 +338,20 @@ These are not extra regimes. They lock the remaining approved error codes.
 - A blank `adjusted_close` fails with `DATA_MISSING_VALUE`.
 - An `adjusted_close` of 0, a negative price, or a non-finite price fails with `DATA_INVALID_PRICE`.
 - A latest observation later than `evaluation_date` fails with `DATA_FUTURE_DATE`. Future rows are not dropped to recover an earlier date.
+
+## Configuration contract
+
+The required enabled board markets are SPY, QQQ, IWM, EWU, EWG, EWJ, and EEM. Each uses `benchmark_id = ACWI` and `enabled = True`.
+
+ACWI is mandatory. Its `benchmark_id` is `ACWI` and its `enabled` value is `False`. That self-reference keeps the schema uniform. ACWI relative strength is not a board-market result.
+
+Every configured market, including a disabled extra market, uses `benchmark_id = ACWI`.
+
+- ACWI with `enabled = True` fails with `CONFIG_BENCHMARK_ENABLED`.
+- ACWI with a `benchmark_id` other than `ACWI` fails. An unknown reference fails with `CONFIG_UNKNOWN_BENCHMARK`. A known market other than ACWI fails with `CONFIG_WRONG_BENCHMARK`.
+- An enabled extra market whose benchmark is not ACWI fails with `CONFIG_WRONG_BENCHMARK`, including when `enabled` is a pandas nullable boolean.
+- A disabled extra market whose benchmark is not ACWI fails with `CONFIG_WRONG_BENCHMARK` when the reference is a configured market, and with `CONFIG_UNKNOWN_BENCHMARK` when it is not.
+- `"True"`, `"False"`, `"yes"`, `"no"`, `1`, `0`, `1.0`, `0.0`, null, and `pd.NA` are not accepted `enabled` values.
+- An object column of genuine Python booleans is accepted.
+- Blank or whitespace-only `market_id`, `display_name`, or `benchmark_id` fails with `CONFIG_MISSING_FIELD`.
+- Surrounding whitespace on those fields fails with `CONFIG_INVALID_FIELD`. The value is not trimmed and accepted.

@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 1A — Project skeleton and deterministic data validation implemented.
+Phase 1A — Project skeleton and deterministic data validation implemented. The post-audit hardening pass is included. Phase 1B is not authorised.
 
 ## What exists
 
@@ -26,7 +26,16 @@ Phase 1A — Project skeleton and deterministic data validation implemented.
 - `No market-state change since previous session` is allowed only when at least 274 observations exist, both states were calculated, and none of the five categorical states changed.
 - An observation later than `evaluation_date` is `DATA_FUTURE_DATE`.
 
-What Changed itself is not implemented. Phase 1A only enforces the 273-observation input minimum and the freshness rules.
+What Changed itself is not implemented. Phase 1A only enforces the 273-observation input minimum and the freshness rules. `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY` belongs to that later phase.
+
+## Validation contract
+
+- Every configured market uses `benchmark_id = ACWI`, including disabled extra markets.
+- ACWI is mandatory, `enabled = False`, and `benchmark_id = ACWI`. That self-reference is schema uniformity only.
+- `enabled` is accepted only as a semantic boolean: Python bool, NumPy boolean scalar, or non-null pandas nullable boolean. An object column of Python booleans is valid. Strings and numbers are rejected.
+- Blank or whitespace-padded configuration text is rejected and is not trimmed.
+- `DATA_MISSING_MARKET` means a required instrument has no rows. `DATA_DATE_INDEX_MISMATCH` means the instrument is present on a different date set.
+- Validation is deterministic and first-failure-wins. Configuration is checked before prices. Schema and values are checked before history and freshness.
 
 ## Explicitly not implemented
 

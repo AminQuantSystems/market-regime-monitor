@@ -1,7 +1,7 @@
 # Finance specification — approved V1 model
 
-**Status:** owner-approved V1 finance rules. Phase 0.5.
-**Implementation is not authorised.** This document does not add code, data, or a market-data vendor.
+**Status:** owner-approved V1 finance rules.
+Phase 1A implements deterministic validation of prices and configuration. Trend, momentum, volatility, relative strength, directional state, and What Changed are specified here and are not implemented.
 
 These rules replace the provisional Phase 0 proposal. Comparisons are exact. The financial definition uses no tolerance and no epsilon.
 
@@ -18,9 +18,13 @@ V1 uses US-listed global-equity market proxies so that every series shares one t
 | EWG | Germany equities | ACWI | yes | yes |
 | EWJ | Japan equities | ACWI | yes | yes |
 | EEM | Emerging Markets | ACWI | yes | yes |
-| ACWI | global-equity benchmark | none | no | no |
+| ACWI | global-equity benchmark | ACWI | no | no |
 
-ACWI is required for every relative-strength calculation. It is not a normal board card. Every enabled market uses ACWI as `benchmark_id`.
+ACWI is mandatory. It is the V1 benchmark and is required for every relative-strength calculation. It is not a normal board card, and its relative strength is not calculated or displayed as a board-market result.
+
+ACWI's `benchmark_id` is `ACWI` only so the configuration schema stays uniform. ACWI's `enabled` value is `False`.
+
+Every configured market uses `benchmark_id = ACWI`. That includes every enabled market, ACWI itself, and any disabled extra market. A disabled extra market may appear in the configuration, and it may be absent from the shared date-index check, but it still uses ACWI. V1 does not give disabled markets a different benchmark.
 
 No production data vendor is selected. V1 input is local validated history.
 
@@ -36,7 +40,9 @@ R(n) = price_t / price_(t-n) - 1
 
 V1 assumes the enabled proxies and ACWI share the same exchange-date index. The date index of every required series must be identical. Required series are the enabled markets plus ACWI.
 
-No forward-fill, backward-fill, or silent row removal is permitted.
+`DATA_MISSING_MARKET` means a required instrument has no rows at all. `DATA_DATE_INDEX_MISMATCH` means the instrument is present, but its set of dates differs from the required shared date index. That includes a missing first date, a missing internal date, a missing latest date, an extra date, and the case where every required series has the same row count on different dates.
+
+No forward-fill, backward-fill, interpolation, or silent row removal is permitted.
 
 A date is complete when every required series has exactly one finite `adjusted_close` greater than 0 on that date. The latest analysis observation is the latest complete date in the validated panel. If that date is later than `evaluation_date`, validation fails with `DATA_FUTURE_DATE`. Future rows are not dropped to recover an earlier date.
 
@@ -58,10 +64,14 @@ Market configuration, separate from prices, at minimum:
 |---|---|
 | market_id | series identifier |
 | display_name | board name |
-| benchmark_id | relative-strength benchmark; ACWI for every enabled V1 market |
+| benchmark_id | `ACWI` for every configured V1 market, including ACWI and disabled extra markets |
 | enabled | whether the market is a board card and a required series |
 
-ACWI remains required as the benchmark even though `enabled` is no.
+`enabled` is a boolean. Accepted values are Python `True`/`False`, NumPy boolean scalars, and non-null pandas nullable-boolean values. The column dtype alone does not decide validity: an object column of genuine Python booleans is valid. Strings (`True`, `False`, `yes`, `no`), numbers (`1`, `0`, `1.0`, `0.0`), null, and `pd.NA` are rejected.
+
+`market_id`, `display_name`, and `benchmark_id` are exact text. Empty text and whitespace-only text are missing. Surrounding whitespace is invalid. Validation does not trim or rewrite those fields.
+
+ACWI remains a required price series even though `enabled` is `False`.
 
 ## T — Trend
 
@@ -308,19 +318,46 @@ The number is fixed by the volatility window: 21 prices for the first 20-day vol
 
 ## Validation
 
-Failures are explicit. No affected output is published with a substituted value.
+Failures are explicit. No affected output is published with a substituted value. The same prices, configuration, and `evaluation_date` produce the same validation result.
+
+Validation is deterministic and first-failure-wins. Configuration is validated before price data. Schema and value checks run before history and freshness. When one input violates more than one rule, exactly one error code is returned, using the order below.
+
+Configuration order:
+
+1. The columns are exactly `market_id`, `display_name`, `benchmark_id`, and `enabled`. A missing column is `CONFIG_MISSING_FIELD`. An unexpected column is `CONFIG_INVALID_COLUMNS`.
+2. `market_id` values are unique. A duplicate is `CONFIG_DUPLICATE_MARKET`.
+3. Each `enabled` value is a semantic boolean. Null or `pd.NA` is `CONFIG_MISSING_FIELD`. Any other non-boolean is `CONFIG_INVALID_FIELD`.
+4. `market_id`, `display_name`, and `benchmark_id` are non-empty text without surrounding whitespace. Blank or whitespace-only text is `CONFIG_MISSING_FIELD`. Any other invalid text is `CONFIG_INVALID_FIELD`.
+5. ACWI is present. Its absence is `CONFIG_MISSING_BENCHMARK`.
+6. ACWI has `enabled = False`. An enabled ACWI is `CONFIG_BENCHMARK_ENABLED`.
+7. Each required board market is present (`CONFIG_MISSING_MARKET`), enabled (`CONFIG_MARKET_DISABLED`), and uses `benchmark_id = ACWI` (`CONFIG_WRONG_BENCHMARK`). The required board markets are SPY, QQQ, IWM, EWU, EWG, EWJ, and EEM.
+8. Every `benchmark_id` names a configured `market_id`. An unknown reference is `CONFIG_UNKNOWN_BENCHMARK`.
+9. Every configured market, including disabled extra markets and ACWI, has `benchmark_id = ACWI`. Any other reference is `CONFIG_WRONG_BENCHMARK`.
+
+Price-data order, after configuration has succeeded:
+
+1. The columns are exactly `date`, `market_id`, and `adjusted_close`. A missing or unexpected column is `DATA_INVALID_COLUMNS`.
+2. Rows are checked in input order. Within a row the order is `date` (`DATA_INVALID_DATE`), then `market_id` (`DATA_UNKNOWN_MARKET` when the identifier is blank or not text), then `adjusted_close` (`DATA_MISSING_VALUE` or `DATA_INVALID_PRICE`).
+3. A `market_id` that is not in the configuration is `DATA_UNKNOWN_MARKET`.
+4. A repeated `(date, market_id)` is `DATA_DUPLICATE_DATE`, including when the two prices are equal.
+5. A required instrument with no rows is `DATA_MISSING_MARKET`.
+6. A required instrument whose date set differs from the shared date index is `DATA_DATE_INDEX_MISMATCH`.
+7. Fewer than 273 shared observations is `DATA_INSUFFICIENT_HISTORY`.
+8. A latest shared observation later than `evaluation_date` is `DATA_FUTURE_DATE`. Future rows are not dropped.
+9. A latest shared observation 6 or more calendar days before `evaluation_date` is `DATA_STALE`.
 
 | Condition | Reason code |
 |---|---|
 | Latest complete observation is later than `evaluation_date` | `DATA_FUTURE_DATE` |
 | Latest complete observation is more than 5 calendar days before `evaluation_date` | `DATA_STALE` |
-| A required series is absent, or is absent from a date that the shared index requires | `DATA_MISSING_MARKET` |
+| A required instrument has no rows | `DATA_MISSING_MARKET` |
+| A required instrument is present but its dates differ from the shared index | `DATA_DATE_INDEX_MISMATCH` |
 | More than one row exists for the same `market_id` and `date` | `DATA_DUPLICATE_DATE` |
 | Fewer than 273 valid observations through the analysis date | `DATA_INSUFFICIENT_HISTORY` |
 | `adjusted_close` is non-numeric, non-finite, or not greater than 0 | `DATA_INVALID_PRICE` |
 | `adjusted_close` is blank or missing | `DATA_MISSING_VALUE` |
 
-Duplicate keys fail even when the two prices are equal.
+Duplicate keys fail even when the two prices are equal. Sorting the returned frame by `date` and then `market_id` is canonicalisation, not financial-data repair.
 
 ## Reason codes
 
@@ -351,16 +388,33 @@ Finance classifications:
 - `STATE_DOWN`
 - `STATE_STRONG_DOWN`
 
-Validation codes:
+Phase 1A validation codes, all reachable from the validator:
 
-- `DATA_STALE`
-- `DATA_FUTURE_DATE`
-- `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`
-- `DATA_MISSING_MARKET`
+- `CONFIG_BENCHMARK_ENABLED`
+- `CONFIG_DUPLICATE_MARKET`
+- `CONFIG_INVALID_COLUMNS`
+- `CONFIG_INVALID_FIELD`
+- `CONFIG_MARKET_DISABLED`
+- `CONFIG_MISSING_BENCHMARK`
+- `CONFIG_MISSING_FIELD`
+- `CONFIG_MISSING_MARKET`
+- `CONFIG_UNKNOWN_BENCHMARK`
+- `CONFIG_WRONG_BENCHMARK`
+- `DATA_DATE_INDEX_MISMATCH`
 - `DATA_DUPLICATE_DATE`
+- `DATA_FUTURE_DATE`
 - `DATA_INSUFFICIENT_HISTORY`
+- `DATA_INVALID_COLUMNS`
+- `DATA_INVALID_DATE`
 - `DATA_INVALID_PRICE`
+- `DATA_MISSING_MARKET`
 - `DATA_MISSING_VALUE`
+- `DATA_STALE`
+- `DATA_UNKNOWN_MARKET`
+
+Specified for the later What Changed phase, and not Phase 1A behaviour:
+
+- `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`
 
 ## Determinism requirements
 

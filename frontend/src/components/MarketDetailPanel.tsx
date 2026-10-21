@@ -108,10 +108,8 @@ export function MarketDetailPanel({ market }: { market: MarketReading }) {
             ["ADJUSTED CLOSE", formatPrice(trend.adjusted_close)],
             ["SMA 50", formatPrice(trend.sma_50)],
             ["SMA 200", formatPrice(trend.sma_200)],
-            ["TREND SCORE", formatCount(trend.trend_score)],
           ]}
         />
-        <p className={styles.note}>Categorical trend score from -2 to 2. Not a composite regime score.</p>
         <Reason code={trend.reason_code} />
       </section>
       <section className={styles.section}>

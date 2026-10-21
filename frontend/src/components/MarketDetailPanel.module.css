@@ -23,7 +23,6 @@
 
 .ticker,
 .asOf,
-.note,
 .statement {
   margin: 4px 0 0;
   color: var(--meem-dark-text-secondary);

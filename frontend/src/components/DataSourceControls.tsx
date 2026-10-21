@@ -1,3 +1,5 @@
+import { useLayoutEffect, useRef } from "react"
+
 import styles from "./DataSourceControls.module.css"
 
 interface DataSourceControlsProps {
@@ -33,10 +35,25 @@ export function DataSourceControls({
   onAsOfDate,
   onAnalyse,
 }: DataSourceControlsProps) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const useCsvRef = useRef<HTMLButtonElement>(null)
+  const wasOpen = useRef(false)
+
+  // Opening CSV mode focuses the file input that replaces USE CSV.
+  // Closing it focuses USE CSV again. The first render does not move focus.
+  useLayoutEffect(() => {
+    if (open && !wasOpen.current) {
+      fileRef.current?.focus()
+    } else if (!open && wasOpen.current) {
+      useCsvRef.current?.focus()
+    }
+    wasOpen.current = open
+  }, [open])
+
   if (!open) {
     return (
       <div className={styles.strip}>
-        <button className={styles.action} type="button" onClick={onOpen}>
+        <button ref={useCsvRef} className={styles.action} type="button" onClick={onOpen}>
           USE CSV
         </button>
       </div>
@@ -59,6 +76,7 @@ export function DataSourceControls({
       <div className={styles.field}>
         <label htmlFor="csv-file">CSV FILE</label>
         <input
+          ref={fileRef}
           id="csv-file"
           name="prices"
           type="file"

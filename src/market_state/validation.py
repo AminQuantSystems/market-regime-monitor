@@ -28,7 +28,9 @@ _DATE_TEXT = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 def validate_configuration(configuration: pd.DataFrame) -> pd.DataFrame:
     """Return a copy of a valid configuration, sorted by market_id.
 
-    The input frame is not modified.
+    Accepted ``enabled`` values are returned in a boolean column. Each value
+    compares equal to Python ``True`` or ``False``. Text fields are not trimmed
+    or rewritten. The input frame is not modified.
     """
     _require_frame(configuration, CONFIG_COLUMNS, "CONFIG_MISSING_FIELD", "CONFIG_INVALID_COLUMNS")
     config = configuration.loc[:, list(CONFIG_COLUMNS)].copy()
@@ -116,18 +118,14 @@ def _reject_duplicate_markets(config: pd.DataFrame) -> None:
 
 
 def _reject_invalid_config_values(config: pd.DataFrame) -> None:
-    if not pd.api.types.is_bool_dtype(config["enabled"]):
-        raise MarketDataError("CONFIG_INVALID_FIELD", "enabled must be boolean")
-    if config["enabled"].isna().any():
-        raise MarketDataError("CONFIG_MISSING_FIELD", "enabled is missing")
+    enabled: list[bool] = []
+    for position in range(len(config)):
+        enabled.append(_require_enabled(config["enabled"].iloc[position]))
+    config["enabled"] = enabled
 
     for column in ("market_id", "display_name", "benchmark_id"):
-        values = config[column]
-        for value in values:
-            if _is_missing(value):
-                raise MarketDataError("CONFIG_MISSING_FIELD", f"{column} is missing")
-            if not isinstance(value, str) or value == "":
-                raise MarketDataError("CONFIG_INVALID_FIELD", f"{column} must be a non-empty string")
+        for position in range(len(config)):
+            _require_config_text(config[column].iloc[position], column)
 
 
 def _reject_universe_errors(config: pd.DataFrame) -> None:
@@ -136,6 +134,13 @@ def _reject_universe_errors(config: pd.DataFrame) -> None:
     if REQUIRED_BENCHMARK not in known:
         raise MarketDataError("CONFIG_MISSING_BENCHMARK", "ACWI is required as the V1 benchmark")
 
+    acwi = rows[REQUIRED_BENCHMARK]
+    if _require_enabled(acwi.enabled):
+        raise MarketDataError(
+            "CONFIG_BENCHMARK_ENABLED",
+            "ACWI must have enabled = False",
+        )
+
     for market_id in REQUIRED_BOARD_MARKETS:
         if market_id not in known:
             raise MarketDataError(
@@ -143,7 +148,7 @@ def _reject_universe_errors(config: pd.DataFrame) -> None:
                 f"required board market is missing: {market_id}",
             )
         row = rows[market_id]
-        if row.enabled != True:
+        if not _require_enabled(row.enabled):
             raise MarketDataError(
                 "CONFIG_MARKET_DISABLED",
                 f"required board market is disabled: {market_id}",
@@ -160,7 +165,9 @@ def _reject_universe_errors(config: pd.DataFrame) -> None:
                 "CONFIG_UNKNOWN_BENCHMARK",
                 f"unknown benchmark reference: {row.benchmark_id}",
             )
-        if row.enabled is True and row.benchmark_id != REQUIRED_BENCHMARK:
+
+    for row in config.itertuples(index=False):
+        if row.benchmark_id != REQUIRED_BENCHMARK:
             raise MarketDataError(
                 "CONFIG_WRONG_BENCHMARK",
                 f"{row.market_id} must use benchmark_id ACWI, found {row.benchmark_id}",
@@ -255,3 +262,36 @@ def _is_missing(value: object) -> bool:
     if isinstance(value, str):
         return value == ""
     return value is pd.NA or value is pd.NaT
+
+
+def _semantic_enabled(value: object) -> bool | None:
+    """Return a Python bool for an accepted boolean value.
+
+    Column dtype is irrelevant. ``1 == True`` in Python, so integers and
+    strings are rejected before any equality comparison.
+    """
+    if isinstance(value, bool):
+        return bool(value)
+    dtype = getattr(value, "dtype", None)
+    if getattr(dtype, "kind", None) == "b":
+        return bool(value)
+    return None
+
+
+def _require_enabled(value: object) -> bool:
+    if _is_missing(value):
+        raise MarketDataError("CONFIG_MISSING_FIELD", "enabled is missing")
+    flag = _semantic_enabled(value)
+    if flag is None:
+        raise MarketDataError("CONFIG_INVALID_FIELD", f"enabled must be boolean, found {value!r}")
+    return flag
+
+
+def _require_config_text(value: object, column: str) -> None:
+    if _is_missing(value) or (isinstance(value, str) and value.strip() == ""):
+        raise MarketDataError("CONFIG_MISSING_FIELD", f"{column} is missing")
+    if not isinstance(value, str) or value != value.strip():
+        raise MarketDataError(
+            "CONFIG_INVALID_FIELD",
+            f"{column} must be a non-empty string with no surrounding whitespace",
+        )

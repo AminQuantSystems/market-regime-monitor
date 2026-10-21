@@ -312,7 +312,7 @@ From `frontend/`, with Node.js available:
 npm run dev
 ```
 
-Vite serves the board at `http://127.0.0.1:5173` and proxies `/api` to the FastAPI process. The screen loads the bundled demonstration panel for `2026-03-01`. Those dates are fixed. They are not taken from the clock.
+Vite serves the board at `http://127.0.0.1:5173` and proxies `/api` to the FastAPI process. The screen loads the bundled demonstration panel for `2026-03-06`. Those dates are fixed weekdays. They are not taken from the clock.
 
 `npm test`, `npm run typecheck`, and `npm run build` regenerate `frontend/src/design-system/tokens.generated.css` from `MEEM_DESIGN_TOKENS.json` before they run. The generated file is not a second palette.
 

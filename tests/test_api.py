@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -16,7 +17,8 @@ from app.api.configuration import v1_configuration
 from app.api.input import DEMO_CSV, MAX_UPLOAD_BYTES
 from app.api.main import create_app
 
-DEMO_DATES = {"data_source": "demo", "evaluation_date": "2026-03-01", "as_of_date": "2026-03-01"}
+DEMO_AS_OF = "2026-03-06"
+DEMO_DATES = {"data_source": "demo", "evaluation_date": DEMO_AS_OF, "as_of_date": DEMO_AS_OF}
 ORDER = ("SPY", "QQQ", "IWM", "EWU", "EWG", "EWJ", "EEM")
 NAMES = {
     "SPY": "S&P 500",
@@ -46,16 +48,21 @@ def test_demo_board_matches_finance_core() -> None:
     assert body["validation_status"] == "VALID"
     assert body["data_source"] == "demo"
     assert body["data_label"] == "DEMO DATA"
-    assert body["as_of_date"] == "2026-03-01"
-    assert body["evaluation_date"] == "2026-03-01"
+    assert body["as_of_date"] == DEMO_AS_OF
+    assert body["evaluation_date"] == DEMO_AS_OF
     assert [market["market_id"] for market in body["markets"]] == list(ORDER)
     assert "ACWI" not in [market["market_id"] for market in body["markets"]]
 
     prices = pd.read_csv(DEMO_CSV, dtype={"date": "string", "market_id": "string", "adjusted_close": "float64"})
-    panel = validate_market_data(prices, v1_configuration(), "2026-03-01")
+    observed = sorted(set(prices["date"]))
+    assert len(observed) == 275
+    assert observed[0] == "2025-02-17"
+    assert observed[-1] == DEMO_AS_OF
+    assert all(date.fromisoformat(item).weekday() < 5 for item in observed)
+    panel = validate_market_data(prices, v1_configuration(), DEMO_AS_OF)
     for market in body["markets"]:
         assert market["display_name"] == NAMES[market["market_id"]]
-        change = calculate_market_regime_change(panel, market["market_id"], "ACWI", "2026-03-01")
+        change = calculate_market_regime_change(panel, market["market_id"], "ACWI", DEMO_AS_OF)
         snapshot = change.current_snapshot
         current = market["current"]
         assert current["trend"]["trend_state"] == snapshot.trend.trend_state

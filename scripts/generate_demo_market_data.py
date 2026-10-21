@@ -1,6 +1,8 @@
 """Write the bundled synthetic demonstration panel.
 
-The sequences are fixed. There is no randomness and no network call.
+The sequences are fixed. There is no randomness, no clock, and no network call.
+Observations are weekdays only so the demonstration does not show Saturday or
+Sunday sessions. Holidays are not removed and no exchange calendar is used.
 The script checks the finished file with the finance package and stops if the
 board labels drift. It does not change the finance engine.
 """
@@ -24,8 +26,8 @@ from market_state.validation import validate_configuration, validate_market_data
 from app.api.configuration import v1_configuration
 
 OBSERVATIONS = 275
-AS_OF_DATE = "2026-03-01"
-EVALUATION_DATE = "2026-03-01"
+AS_OF_DATE = "2026-03-06"
+EVALUATION_DATE = "2026-03-06"
 CSV_PATH = ROOT / "app" / "demo" / "v1_market_data.csv"
 METADATA_PATH = ROOT / "app" / "demo" / "metadata.json"
 
@@ -41,8 +43,16 @@ EXPECTED = {
 
 
 def _dates() -> list[str]:
-    end = date.fromisoformat(AS_OF_DATE)
-    return [(end - timedelta(days=OBSERVATIONS - 1 - index)).isoformat() for index in range(OBSERVATIONS)]
+    cursor = date.fromisoformat(AS_OF_DATE)
+    if cursor.weekday() >= 5:
+        raise SystemExit("demo as-of must be a Monday–Friday date")
+    collected: list[date] = []
+    while len(collected) < OBSERVATIONS:
+        if cursor.weekday() < 5:
+            collected.append(cursor)
+        cursor -= timedelta(days=1)
+    collected.reverse()
+    return [item.isoformat() for item in collected]
 
 
 def _geometric(start: float, daily: float, count: int) -> list[float]:
@@ -115,6 +125,11 @@ def _frame(prices: dict[str, list[float]]) -> pd.DataFrame:
 
 def _verify(csv_path: Path) -> None:
     prices = pd.read_csv(csv_path, dtype={"date": "string", "market_id": "string", "adjusted_close": "float64"})
+    observed = sorted(set(prices["date"]))
+    if len(observed) != OBSERVATIONS or observed[-1] != AS_OF_DATE:
+        raise SystemExit("demo observations must be 275 dates ending on the fixed as-of date")
+    if any(date.fromisoformat(item).weekday() >= 5 for item in observed):
+        raise SystemExit("demo observations include a weekend")
     configuration = validate_configuration(v1_configuration())
     panel = validate_market_data(prices, configuration, EVALUATION_DATE)
     for market_id, expected in EXPECTED.items():
@@ -147,7 +162,7 @@ def main() -> None:
         "label": "DEMO DATA",
         "evaluation_date": EVALUATION_DATE,
         "as_of_date": AS_OF_DATE,
-        "description": "Synthetic demonstration panel for the Market State Board. Not vendor history and not a live feed.",
+        "description": "Synthetic weekday demonstration panel for the Market State Board. Not vendor history, not an exchange calendar, and not a live feed.",
         "synthetic": True,
     }
     METADATA_PATH.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")

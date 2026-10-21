@@ -14,7 +14,7 @@ This planning pass performs no SSH, SCP, SFTP, or other remote action.
 
 ## V1 may not need the Mac
 
-The proposed V1 calculations are moving averages, returns, a 20-day realised volatility, a trailing percentile, and a rule table. On a modest asset universe those steps are small.
+The proposed V1 calculations are moving averages, returns, a 21-return realised volatility, a trailing percentile, and a rule table. On a modest asset universe those steps are small. This plan does not authorise implementing them.
 
 Remote execution is not justified until a Windows-versus-Mac benchmark on a representative finance workload shows a material benefit. If the benchmark does not show that benefit, V1 runs entirely on Windows.
 

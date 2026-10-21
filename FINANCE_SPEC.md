@@ -1,7 +1,7 @@
 # Finance specification — approved V1 model
 
 **Status:** owner-approved V1 finance rules.
-Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Volatility, relative strength, directional state, and What Changed are specified here and are not implemented.
+Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D approves the Volatility design and does not implement it. Relative strength, directional state, and What Changed are specified here and are not implemented.
 
 These rules replace the provisional Phase 0 proposal. Comparisons are exact. The financial definition uses no tolerance and no epsilon.
 
@@ -121,7 +121,11 @@ P21 versus P63 decides whether pace is strengthening or weakening. G(n) is the e
 
 The calculation uses only the requested market on or before the exact as-of date. A missing date is not replaced by a neighbour. Later rows are ignored and are not borrowed to meet the history minimum.
 
-`price_(t-63)` is 63 observations before `t`, so the Momentum unit needs at least 64 observations through the as-of date. 63 observations fail with `DATA_INSUFFICIENT_HISTORY`. The market-data validator still requires 273 observations for a full market state.
+`price_(t-63)` is 63 observations before `t`, so the Momentum unit needs at least 64 observations through the as-of date. 63 observations fail with `DATA_INSUFFICIENT_HISTORY`. The running market-data validator still requires 273 observations. The approved full-state minimum becomes 274 when Volatility is integrated. That validator change is not in the running code.
+
+`classify_momentum` is a predicate on four pre-calculated numbers. Each return and its pace are expected to come from the same positive price ratio. The predicate does not recompute a ratio and does not reject a finite tuple that could not have come from one ratio. `calculate_momentum` is the normal public path. It builds both pairs from the same positive adjusted closes.
+
+A finite positive pair of prices can still underflow to a zero ratio or overflow to a non-finite ratio. That ratio is `DATA_INVALID_PRICE`. The calculation does not clip, floor, or substitute an epsilon, and it does not leak a raw math exception.
 
 | State | Rule | Reason code |
 |---|---|---|
@@ -154,24 +158,49 @@ Momentum direction, used only by the directional table:
 
 ## V — Volatility
 
-Daily return:
+**Status:** design approved. Not implemented. There is no Volatility module and no Volatility test.
+
+V1 Volatility is a backward-looking realised-movement magnitude instrument. It asks how large recent daily price movements have been relative to this market's own recent history.
+
+It does not say whether the market is bullish or bearish. It is not expected future volatility, implied volatility, value at risk, expected loss, a position size, or a trade direction. Volatility does not enter the directional state. A high or low regime is not bullish or bearish.
+
+The 21-session calculation is deliberately aligned with the transparent realised-volatility construction published in the Cboe Realized Volatility Index methodology. Flight Deck does not reproduce the Cboe index. Cboe RVOL derives its underlying spot value under its own index methodology. Flight Deck uses validated `adjusted_close` market-proxy prices and adds its own historical percentile regime.
+
+The 252-observation percentile and the 25/75/90 labels are a Flight Deck classification choice. They are not a Cboe standard and they are not a universal institutional standard. Their purpose is an interpretable asset-relative state.
+
+### RV21
+
+`N = 21` trading-observation log returns ending at `t`. Lookbacks are observations, not calendar days.
 
 ```text
-ln(price_t / price_(t-1))
+r_i = ln(price_i / price_(i-1))
+RV21_t = sqrt( (252 / 21) * sum(r_i^2 for the latest 21 returns) )
+        = sqrt( 252 * mean(r_i^2 for the latest 21 returns) )
 ```
 
-Current realised volatility uses the latest 20 daily log returns:
+The two forms are the same. The result is a decimal: 0.20 means 20% annualised. Percentage formatting belongs to a later UI.
 
-- sample standard deviation with divisor `n - 1` (`ddof=1`)
-- annualised by multiplying by `sqrt(252)`
+Construction rules:
 
-The reference distribution is the previous 252 rolling 20-day realised-volatility observations. The current observation is not a member of that distribution.
+- Use 21 returns, so a standalone RV21 needs 22 prices. 21 prices are insufficient.
+- Use log returns of `adjusted_close`.
+- Set the return mean to zero by construction. Sum the squares. Do not subtract the sample mean.
+- Do not use a sample standard deviation, `ddof=1`, or 20 returns.
+- Annualise with 252.
+- Do not clip, floor, or introduce an epsilon.
 
-Empirical percentile:
+This is the root-mean-square size of the daily log moves. Subtracting the sample mean would measure dispersion around recent drift and would mix a return estimate into a magnitude instrument. That is not the approved construction. Sign does not enter, because each return is squared. A constant price has every return at 0, so RV21 is 0. Any path whose absolute log returns are the constant `c` has `RV21 = abs(c) * sqrt(252)`, including a path that alternates in sign.
+
+### Regime
+
+Calculate today's RV21. Compare it with the previous 252 RV21 observations for the same market. Today's value is not a member of that reference distribution.
 
 ```text
-percentile = 100 * count(previous_volatility <= current_volatility) / 252
+k = count(previous_rv21 <= current_rv21)
+percentile = 100 * k / 252
 ```
+
+`k` is an integer from 0 through 252. A previous value exactly equal to today's RV21 counts toward `k`. The comparison is `<=`. It is not a strict less-than, not an average rank, not an interpolated percentile, and not an external statistics routine.
 
 | Regime | Rule | Reason code |
 |---|---|---|
@@ -180,18 +209,76 @@ percentile = 100 * count(previous_volatility <= current_volatility) / 252
 | Elevated | 75 < percentile <= 90 | `VOLATILITY_ELEVATED` |
 | High | percentile > 90 | `VOLATILITY_HIGH` |
 
-The four bands partition every real percentile. Exact boundaries:
+The four bands partition every real percentile. Exact 25 is Low. Exact 75 is Normal. Exact 90 would be Elevated.
 
-- percentile 25 is Low
-- percentile 75 is Normal
-- percentile 90 would be Elevated
+Attainable values are `100 * k / 252`. This hits 25 at `k = 63` and 75 at `k = 189`. It never hits 90, because `0.90 * 252 = 226.8` is not an integer.
 
-With a denominator of 252, attainable percentiles are `100 * k / 252` for an integer count `k` from 0 through 252. This hits 25 exactly at `k = 63` and 75 exactly at `k = 189`. It never hits 90, because `90 * 252 / 100 = 226.8` is not an integer. The boundary test is therefore the adjacent attainable values:
+- `k = 226` gives `22600 / 252 = 89.6825396...`, which is Elevated
+- `k = 227` gives `22700 / 252 = 90.0793650...`, which is High
 
-- `k = 226` gives `22600 / 252 = 89.6825...`, which is Elevated
-- `k = 227` gives `22700 / 252 = 90.0793...`, which is High
+Realised-volatility levels differ across markets, so an absolute number does not have one meaning for every asset. Ranking today's RV21 against that market's own trailing history makes the regime asset-relative. The count does not assume a normal distribution, and it can be explained in a few seconds. The percentile is not a forecast.
 
-Volatility does not enter the directional state. A high or low regime is not bullish or bearish.
+### History arithmetic
+
+One RV21 uses 21 returns and therefore prices from `t-21` through `t`: 22 prices.
+
+The regime needs today's RV21 and the previous 252 RV21 values, at `t-252` through `t-1`. The earliest of those, at `t-252`, uses prices from `t-273` through `t-252`. The full price set is `t-273` through `t`, which is 274 prices.
+
+273 prices reach back only to `t-272`. The RV21 at `t-252` then has no price at `t-273`, so fewer than 252 previous RV21 values exist. 273 is insufficient for the complete regime. 274 is sufficient.
+
+What Changed compares the complete regime at `t` with the complete regime at `t-1`. The regime at `t-1` needs a price at `(t-1)-273 = t-274`. Prices from `t-274` through `t` are 275 observations.
+
+- At 274 the current full state can be available. The previous full state cannot. `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
+- At 275 both the current full state and the previous full state can be available.
+
+The running validator still rejects fewer than 273 observations. It has not been raised to 274. The 274 and 275 figures are the approved finance minima and will be enforced when Volatility is integrated.
+
+### As-of contract
+
+Volatility supports an exact `as_of_date`. For requested date `t`:
+
+- use only that market
+- require `t` to exist exactly, with no nearest-date substitution
+- use no price after `t`
+- today's RV21 uses only returns ending at `t`
+- each reference RV21 uses only prices available on its own date
+- the reference set ends at `t-1`
+- today's RV21 does not enter its own percentile
+- later rows are not borrowed to reach 274
+
+### API, design only
+
+These names are the approved shape. They are not implemented.
+
+1. `calculate_rv21` takes 22 adjusted closes in observation order, oldest first, and returns the decimal RV21.
+2. `classify_volatility(current_rv21, historical_rv21_values)` requires exactly 252 prior values. It returns `k`, the percentile, the regime, and the reason code.
+3. `calculate_volatility(prices, market_id, as_of_date)` selects one market, applies the as-of rule, and returns a frozen `VolatilityResult`.
+
+`VolatilityResult` fields:
+
+- `market_id`
+- `as_of_date`
+- `adjusted_close`
+- `realized_volatility_21`
+- `reference_count`, the integer `k`
+- `historical_percentile`
+- `volatility_regime`
+- `reason_code`
+
+`reference_count` is included because the bands are defined on `100 * k / 252` and 90 is not attainable. It is the count that makes the percentile auditable. It is not a score and it is not a forecast. No confidence, signal strength, predicted volatility, or position size is included.
+
+A non-finite or negative volatility input is `DATA_INVALID_PRICE`. Fewer than 22 prices for RV21, or fewer than 274 prices through the as-of date for the regime, is `DATA_INSUFFICIENT_HISTORY`.
+
+### Future volatility research
+
+These extensions are not part of V1 and are not implemented.
+
+- EWMA and RiskMetrics-style volatility forecasting
+- longer realised-volatility horizons, such as 63, 126, and 252 observations
+- robust or multi-horizon volatility models
+- implied volatility, once an appropriate options source exists
+
+V1 measures realised volatility from past adjusted closes. A forecast estimates volatility that has not yet been observed. Implied volatility is a price from the options market. Those three jobs stay separate.
 
 ## R — Relative strength
 
@@ -264,15 +351,16 @@ Compare the latest complete observation with the immediately previous complete o
 
 ### Current-state minimum history
 
-- 273 valid price observations are sufficient to calculate the latest complete market state.
-- 272 observations fail with `DATA_INSUFFICIENT_HISTORY`. No current state is published.
+- 274 valid price observations are sufficient to calculate the latest complete market state once Volatility is integrated.
+- 273 observations are insufficient for that complete state, because the volatility regime then has no price at `t-273`.
+- The running validator still accepts 273 and rejects 272. That gate has not been changed.
 
 ### What Changed minimum history
 
-- 274 valid price observations are required to calculate both the latest complete state and the immediately previous complete state.
-- At exactly 273 observations, the current state succeeds and the previous-session comparison is unavailable.
+- 275 valid price observations are required to calculate both the latest complete state and the immediately previous complete state.
+- At exactly 274 observations, the current state can succeed and the previous-session comparison is unavailable.
 
-At exactly 273 observations the engine must not return:
+At exactly 274 observations the engine must not return:
 
 ```text
 No market-state change since previous session
@@ -288,13 +376,13 @@ with reason code `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
 
 The sentence `No market-state change since previous session` is produced only when all three of these are true:
 
-- at least 274 valid observations exist
+- at least 275 valid observations exist
 - both the latest state and the previous state were calculated successfully
 - none of the five categorical states changed
 
 Those five states are the directional state, Trend, Momentum, Volatility, and Relative Strength. A difference in any of them is a categorical transition. Each transition names the instrument, the previous label, the new label, and the reason code.
 
-This comparison is specified here and is not implemented in Phase 1A. Phase 1A only enforces the 273-observation input minimum.
+This comparison is specified here and is not implemented. The running validator still enforces 273 observations. The 274 and 275 minima are enforced when Volatility is integrated.
 
 ## Freshness and reproducibility
 
@@ -322,11 +410,11 @@ same price data + same configuration + same evaluation_date = same output
 
 ## Minimum history
 
-A full current state requires 273 valid price observations on the shared date index for every required series.
+The approved full current state requires 274 valid price observations on the shared date index for every required series.
 
-The number is fixed by the volatility window: 21 prices for the first 20-day volatility, plus 252 previous volatility observations, with the current observation excluded. The first price used by that construction is 272 observations before the analysis date, so the series length is 273. Trend and momentum need less history than that.
+The number is fixed by the volatility regime. RV21 at `t-252` needs the price at `t-273`, and the current price is at `t`, so the length is 274. Trend and Momentum need less history than that. A standalone RV21 needs 22 prices. The complete What Changed comparison needs 275.
 
-272 valid observations fail with `DATA_INSUFFICIENT_HISTORY`. No partial state is published.
+The running validator still treats 273 as sufficient and 272 as `DATA_INSUFFICIENT_HISTORY`. No partial state is published. Raising the validator gate to 274 is part of Volatility integration, not this design pass.
 
 ## Validation
 
@@ -354,7 +442,7 @@ Price-data order, after configuration has succeeded:
 4. A repeated `(date, market_id)` is `DATA_DUPLICATE_DATE`, including when the two prices are equal.
 5. A required instrument with no rows is `DATA_MISSING_MARKET`.
 6. A required instrument whose date set differs from the shared date index is `DATA_DATE_INDEX_MISMATCH`.
-7. Fewer than 273 shared observations is `DATA_INSUFFICIENT_HISTORY`.
+7. Fewer than 273 shared observations is `DATA_INSUFFICIENT_HISTORY`. This is the running gate. The approved full-state gate becomes 274 when Volatility is integrated.
 8. A latest shared observation later than `evaluation_date` is `DATA_FUTURE_DATE`. Future rows are not dropped.
 9. A latest shared observation 6 or more calendar days before `evaluation_date` is `DATA_STALE`.
 
@@ -365,7 +453,7 @@ Price-data order, after configuration has succeeded:
 | A required instrument has no rows | `DATA_MISSING_MARKET` |
 | A required instrument is present but its dates differ from the shared index | `DATA_DATE_INDEX_MISMATCH` |
 | More than one row exists for the same `market_id` and `date` | `DATA_DUPLICATE_DATE` |
-| Fewer than 273 valid observations through the analysis date | `DATA_INSUFFICIENT_HISTORY` |
+| Fewer than 273 valid observations through the analysis date | `DATA_INSUFFICIENT_HISTORY` in the running validator. The approved full-state rule, applied when Volatility is integrated, rejects fewer than 274 |
 | `adjusted_close` is non-numeric, non-finite, or not greater than 0 | `DATA_INVALID_PRICE` |
 | `adjusted_close` is blank or missing | `DATA_MISSING_VALUE` |
 

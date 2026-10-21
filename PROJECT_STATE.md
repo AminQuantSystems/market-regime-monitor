@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 1C — Momentum instrument implemented.
+Phase 1D — Volatility design approved. Volatility is not implemented.
 
 ## What exists
 
@@ -21,14 +21,11 @@ Phase 1C — Momentum instrument implemented.
 
 ## History rule
 
-- 273 valid observations are sufficient for the latest complete market state.
-- 272 observations fail with `DATA_INSUFFICIENT_HISTORY`.
-- 274 valid observations are required before What Changed can calculate both the latest state and the previous state.
-- At exactly 273 observations the current state succeeds, `change_status = unavailable`, and the reason code is `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
-- `No market-state change since previous session` is allowed only when at least 274 observations exist, both states were calculated, and none of the five categorical states changed.
-- An observation later than `evaluation_date` is `DATA_FUTURE_DATE`.
+The running validator still accepts 273 observations and rejects 272 with `DATA_INSUFFICIENT_HISTORY`. That code has not been changed for Volatility.
 
-What Changed itself is not implemented. Phase 1A only enforces the 273-observation input minimum and the freshness rules. `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY` belongs to that later phase.
+The approved full-state minimum becomes 274 when Volatility is implemented. 273 observations are then insufficient for the complete volatility regime. The approved What Changed minimum becomes 275. At 274 the current full state can be available and the previous full state cannot, so `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. `No market-state change since previous session` is allowed only when at least 275 observations exist, both states were calculated, and none of the five categorical states changed.
+
+An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed itself is not implemented.
 
 ## Validation contract
 
@@ -44,7 +41,7 @@ What Changed itself is not implemented. Phase 1A only enforces the 273-observati
 - Validation: implemented
 - Trend: implemented
 - Momentum: implemented
-- Volatility: not implemented
+- Volatility: design approved — not implemented
 - Relative Strength: not implemented
 - Directional market state: not implemented
 - What Changed: not implemented
@@ -53,6 +50,9 @@ What Changed itself is not implemented. Phase 1A only enforces the 273-observati
 - Backtesting: not implemented
 - Mac integration: not authorised
 - GitHub publication: none
+- Full-market-state minimum planned for Volatility integration: 274
+- What Changed complete-state minimum planned for that integration: 275
+- Validation code: still enforces 273, and has not been changed for the Volatility requirement
 
 ## Data and operations
 
@@ -64,4 +64,4 @@ What Changed itself is not implemented. Phase 1A only enforces the 273-observati
 
 ## Next approved action
 
-Stop at Phase 1C. Do not start Volatility or any other instrument until that phase is authorised.
+Stop after the Volatility design. Do not implement Volatility, Relative Strength, directional state, What Changed, or UI until that work is authorised.

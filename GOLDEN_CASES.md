@@ -1,6 +1,6 @@
 # Golden acceptance cases
 
-**Status:** Trend cases below are the hand-checked inputs for `tests/test_trend.py`. Later instruments remain documentation until their phase is authorised.
+**Status:** Trend cases below are the hand-checked inputs for `tests/test_trend.py`. Momentum cases are the hand-checked inputs for `tests/test_momentum.py`. Volatility cases are an approved design and have no Python tests yet.
 
 Each case is constructed so the expected result can be checked by hand. Price comparisons use the approved exact rules, with no epsilon. Unless a case says otherwise, ACWI's 63-observation return is 0, and only the named prices differ from a flat series.
 
@@ -263,33 +263,79 @@ Expected: Deteriorating, `MOMENTUM_DETERIORATING`.
 
 A Momentum calculation with 64 observations is accepted. 63 observations fail with `DATA_INSUFFICIENT_HISTORY`. An as-of date that is not in the market's series fails and is not replaced. Rows after the as-of date do not enter either return or either pace.
 
-## 9. Volatility percentile boundaries
+## 9. Volatility design cases
 
-The reference sample has 252 previous realised-volatility values. The current value is not one of them.
+These cases are the approved Volatility design. They are not implemented and they have no Python tests. RV21 is the zero-mean root-mean-square of 21 log returns, annualised with 252. The percentile uses the previous 252 RV21 values and the comparison `<=`. Today's RV21 is not in that set.
 
 ```text
-percentile = 100 × count(previous <= current) / 252
+r_i = ln(price_i / price_(i-1))
+RV21 = sqrt( (252 / 21) * sum(r_i^2) ) = sqrt( 252 * mean(r_i^2) )
+percentile = 100 * k / 252
+k = count(previous_rv21 <= current_rv21)
 ```
 
-| Count at or below the current value | Percentile | Expected regime | Reason code |
-|---:|---:|---|---|
+### 9a. Constant prices
+
+Every price is 100. Every log return is 0. The sum of squares is 0.
+
+```text
+RV21 = 0
+```
+
+### 9b. Constant log-return magnitude
+
+Each of the 21 log returns is `+0.01`. The sum of squares is `21 * 0.0001 = 0.0021`.
+
+```text
+RV21 = sqrt( (252 / 21) * 0.0021 ) = sqrt(0.0252) = 0.01 * sqrt(252)
+```
+
+One price construction is a geometric path whose exact step ratio is `e^0.01`. In real arithmetic every log return is 0.01. A later test compares the computed float with `pytest.approx` and does not use that approximation to choose a regime.
+
+### 9c. Alternating sign, same magnitude
+
+The 21 log returns alternate `+0.01, -0.01`, starting at `+0.01`. Because 21 is odd, eleven returns are positive and ten are negative. Their mean is `0.01 / 21`, which is not zero. The squares are still `0.0001` each, so the sum of squares is `0.0021` and RV21 equals case 9b. The approved formula does not subtract that mean.
+
+### 9d. Standalone history
+
+22 prices are sufficient for one RV21. 21 prices are insufficient.
+
+### 9e. Complete regime history
+
+274 prices are sufficient for today's RV21 plus the previous 252 RV21 values. The earliest reference value, at `t-252`, uses the price at `t-273`. 273 prices do not contain that price, so the complete regime is unavailable.
+
+### 9f. Attainable percentile boundaries
+
+| k | Percentile | Expected regime | Reason code |
+|---:|---|---|---|
 | 63 | 25 exactly | Low | `VOLATILITY_LOW` |
-| 64 | 25.3968... | Normal | `VOLATILITY_NORMAL` |
+| 64 | `6400 / 252 = 25.3968253...` | Normal | `VOLATILITY_NORMAL` |
 | 189 | 75 exactly | Normal | `VOLATILITY_NORMAL` |
-| 190 | 75.3968... | Elevated | `VOLATILITY_ELEVATED` |
-| 226 | 89.6825... | Elevated | `VOLATILITY_ELEVATED` |
-| 227 | 90.0793... | High | `VOLATILITY_HIGH` |
+| 190 | `19000 / 252 = 75.3968253...` | Elevated | `VOLATILITY_ELEVATED` |
+| 226 | `22600 / 252 = 89.6825396...` | Elevated | `VOLATILITY_ELEVATED` |
+| 227 | `22700 / 252 = 90.0793650...` | High | `VOLATILITY_HIGH` |
 
-There is no integer count that produces percentile 90. The approved boundary is still exact: 90 would be Elevated, and the first attainable value above 90 is High.
+No integer `k` produces percentile 90. A literal 90 would be Elevated. The first attainable value above 90 is `k = 227`, and that is High.
 
-Worked annualisation, separate from the percentile count. Twenty log returns alternate between +0.01 and -0.01. Their mean is 0 and their sum of squares is 0.002.
+### 9g. Ties use `<=`
 
-```text
-sample standard deviation = sqrt(0.002 / 19)
-annualised volatility = sqrt(0.002 / 19) × sqrt(252) = sqrt(0.504 / 19)
-```
+On a constant price, today's RV21 is 0 and all 252 previous RV21 values are 0. Every previous value satisfies `<=`, so `k = 252` and the percentile is 100. The regime is High, `VOLATILITY_HIGH`. A strict less-than would have counted `k = 0` and called the same path Low. The approved rule is `<=`.
 
-The divisor is 19 because the sample standard deviation uses `ddof=1`.
+A mixed tie has the same rule. If 100 previous values are below today's RV21, 10 are exactly equal to it, and 142 are above it, then `k = 110`. The 10 equal values are inside the count.
+
+### 9h. Today's value is excluded
+
+The reference length stays 252. If all 252 previous values are 0.10 and today's RV21 is 0.50, then `k = 252` and the percentile is 100. Today's 0.50 is not added to the reference set.
+
+### 9i. As-of, isolation, and caller contract
+
+An exact as-of date is required. A later block of extreme adjusted closes does not change the RV21, the percentile, the regime, or the reason code at the original date. Another market's prices in the same frame do not change the requested market. The same history, market, and as-of date return the same result. The caller's frame is not mutated.
+
+### 9j. 274 current state, 275 What Changed
+
+At 274 prices the current full state can be calculated, and the previous full state cannot. `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. The text is not `No market-state change since previous session`.
+
+At 275 prices both states can be calculated. A constant `adjusted_close` of 100 across those 275 dates keeps every category unchanged, including Volatility High, so that sentence is allowed only in that complete comparison.
 
 ## 10. Relative-strength boundaries
 
@@ -343,45 +389,43 @@ Strong Down fails because momentum is not negative. Down matches because the tre
 
 Expected: Down, `STATE_DOWN`.
 
-## 16. 273 observations accepted
+## 16. Running validator: 273 observations accepted
+
+This case locks the implemented validator. It is not the approved complete Volatility regime.
 
 Every required series has the same 273 dates and a finite positive `adjusted_close` on each. `evaluation_date` equals the last date.
 
-Expected: the run succeeds and publishes a full current state. A constant price of 100 on every series is a sufficient fixture:
+Expected from the running validator: the panel is accepted. The validator has not been changed to 274.
 
-- Trend score 0, `TREND_NEUTRAL_AT_200`
-- Momentum Mixed, `MOMENTUM_MIXED`
-- Relative strength 0, `RELATIVE_STRENGTH_NEUTRAL`
-- current and previous realised volatilities are all 0, so the percentile is 100 and the regime is High, `VOLATILITY_HIGH`
-- directional state Neutral, `STATE_NEUTRAL`
+The approved full state, once Volatility is integrated, needs 274 observations. Case 9e is that rule. At 273 the complete volatility regime is unavailable, so a full current state is not published under the approved rule.
 
-What Changed is unavailable. `change_status = unavailable` with reason code `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
-
-The result must not be `No market-state change since previous session`. The previous date has only 272 observations, so no valid comparison has been made.
-
-## 16b. 274 observations make both states available
+## 16b. Approved current state at 274
 
 The same aligned fixture with 274 observations per required series, and `evaluation_date` equal to the last date.
 
-Expected: the current state and the previous state are both available for comparison. This case does not, by itself, require the categories to be identical.
+Expected once Volatility is integrated: the current full state can be calculated. The previous full state cannot. `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
 
-## 16c. 274 observations with identical categories
+The result must not be `No market-state change since previous session`.
 
-Every required series is a constant `adjusted_close` of 100 across all 274 dates. `evaluation_date` equals the last date.
+## 16c. 275 observations with identical categories
 
-Expected: both states are calculated, every categorical label is unchanged, and the comparison text is exactly `No market-state change since previous session`.
+Every required series is a constant `adjusted_close` of 100 across all 275 dates. `evaluation_date` equals the last date.
 
-On this constant panel the labels on both dates are Trend score 0, Momentum Mixed, Volatility High, Relative Strength Neutral, and directional state Neutral.
+Expected once What Changed and Volatility exist: both states are calculated, every categorical label is unchanged, and the comparison text is exactly `No market-state change since previous session`.
 
-## 17. 272 observations rejected
+On this constant panel the labels on both dates are Trend score 0, Momentum Mixed, Volatility High, Relative Strength Neutral, and directional state Neutral. Volatility is High because every RV21 is 0, `k = 252`, and the percentile is 100.
+
+## 17. Running validator: 272 observations rejected
 
 The same aligned fixture with 272 observations per required series.
 
-Expected: `DATA_INSUFFICIENT_HISTORY`. No directional state and no instrument state are published.
+Expected from the running validator: `DATA_INSUFFICIENT_HISTORY`. No directional state and no instrument state are published.
+
+Under the approved Volatility rule, 273 observations are also insufficient for the complete regime. The running validator still accepts 273. That change waits for Volatility integration.
 
 ## 18. Staleness of exactly 5 calendar days accepted
 
-A valid 273-observation panel whose latest date is 2026-03-01. `evaluation_date` is 2026-03-06.
+A panel the running validator accepts, with 273 observations whose latest date is 2026-03-01. `evaluation_date` is 2026-03-06. This length is the implemented validation fixture.
 
 Expected: the run succeeds. The age is 5 calendar days.
 

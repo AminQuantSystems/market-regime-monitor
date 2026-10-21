@@ -69,7 +69,7 @@ CHANGE is presentation of a result that does not exist yet. `CHANGED` shows the 
 
 ## What changed
 
-What Changed is designed and is not implemented. A transition is a change in Direction, Momentum, Volatility, or Relative Performance. There is no composite-regime transition. The comparison retains every changed dimension. It does not keep only one of them. The finance result stores the two snapshots and the transition labels. It does not store colours or the compact `D` `M` `V` `R` strings.
+What Changed is implemented in the library and is not drawn on a screen. A transition is a change in Direction, Momentum, Volatility, or Relative Performance. There is no composite-regime transition. The comparison retains every changed dimension. It does not keep only one of them. `MarketRegimeChange` stores the two snapshots and the transition labels. A future screen derives `D`, `M`, `V`, `R`, `—`, and `N/A` from `change_status` and `transitions`. The result does not store those glyphs or any colour.
 
 ## Shared MEEM visual system
 

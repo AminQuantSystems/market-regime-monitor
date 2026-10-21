@@ -520,7 +520,7 @@ A component result whose market id, as-of date, or benchmark id contradicts the 
 
 ## 13. What Changed
 
-Design only. These cases are not implemented and have no Python tests yet. What Changed compares categorical labels on two snapshots. It does not calculate finance.
+Verified by `tests/test_change.py`. What Changed compares categorical labels on two snapshots. It does not calculate finance. The cases below state the expected labels. The pure comparator verifies the single-dimension and combined label pairs. The price panels verify the history boundary, the final-jump reading, and the observation-date rule.
 
 1. **274 observations.** The current snapshot is valid. The change status is `UNAVAILABLE`. The reason is `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. The previous snapshot is null, the transition list is empty, and the current snapshot is present. The result does not say that nothing changed.
 
@@ -537,6 +537,8 @@ Design only. These cases are not implemented and have no Python tests yet. What 
 7. **Direction and Momentum.** Both transitions are kept, direction first, then momentum. The primary column is `D M`.
 
 8. **All four dimensions.** Up to Strong Up, Positive to Accelerating, Normal to Elevated, and Neutral to Outperform. All four transitions are kept in the order direction, momentum, volatility, relative performance. The primary column is `D M V R`.
+
+   A separate 275-observation price panel keeps 274 closes at 128 and then jumps to SPY 144 and ACWI 160. Through the previous observation every close is 128, so the previous labels are Neutral, Mixed, Normal, and Neutral. The current labels are Strong Up, Accelerating, High, and Strong Underperform. All four transitions are kept in the same order.
 
 9. **Numbers move inside the same labels.** RV21 moves while Volatility stays Normal, and the active return moves while Relative Performance stays Outperform. The other labels are also unchanged. The status is `UNCHANGED` and the transition list is empty.
 
@@ -558,7 +560,7 @@ Design only. These cases are not implemented and have no Python tests yet. What 
 
 Every required series has the same 274 dates and a finite positive `adjusted_close` on each. `evaluation_date` equals the last date.
 
-Expected: the panel is accepted. This is the full current-state minimum. What Changed is not implemented. At 274 the previous full state cannot be calculated, so a later comparison must not say `No market-state change since previous session`.
+Expected: the panel is accepted. This is the full current-state minimum. At 274 the previous full state cannot be calculated, so the comparison must not say `No market-state change since previous session`.
 
 ## 16b. Approved current state at 274
 

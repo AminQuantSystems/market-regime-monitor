@@ -27,12 +27,27 @@
   letter-spacing: 0.08em;
 }
 
-.demo {
+.identity {
+  min-width: 0;
+}
+
+.source {
   margin: 4px 0 0;
   color: var(--meem-semantic-information-dark);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.12em;
+}
+
+.fileName {
+  max-width: 280px;
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--meem-dark-text-muted);
+  font-size: 11px;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .note {

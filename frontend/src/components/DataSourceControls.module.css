@@ -1,0 +1,103 @@
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+  max-width: 100%;
+  margin-top: 12px;
+}
+
+.mode {
+  margin: 0;
+  color: var(--meem-semantic-information-dark);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.field label {
+  color: var(--meem-dark-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.field input {
+  max-width: 100%;
+  color: var(--meem-dark-text-primary);
+  background: var(--meem-dark-surface-1);
+  border: 1px solid var(--meem-dark-border-interactive);
+  border-radius: 2px;
+  color-scheme: dark;
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  max-width: 100%;
+}
+
+.action {
+  border: 1px solid var(--meem-dark-border-interactive);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--meem-dark-text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 6px 10px;
+}
+
+.primary {
+  background: var(--meem-dark-accent-accessible);
+  border-color: var(--meem-dark-accent-accessible);
+  color: var(--meem-dark-canvas);
+}
+
+.action:disabled {
+  background: transparent;
+  border-color: var(--meem-dark-border-subtle);
+  color: var(--meem-dark-text-muted);
+  cursor: default;
+}
+
+.action:focus-visible,
+.field input:focus-visible {
+  outline: 2px solid var(--meem-dark-accent-accessible);
+  outline-offset: 2px;
+}
+
+.hint,
+.notice,
+.fileName {
+  margin: 0;
+  color: var(--meem-dark-text-muted);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.fileName {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notice {
+  color: var(--meem-dark-text-secondary);
+}

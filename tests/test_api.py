@@ -121,6 +121,29 @@ def test_upload_requires_a_file() -> None:
     assert response.json()["error"]["code"] == "API_FILE_REQUIRED"
 
 
+def test_upload_of_the_same_bytes_matches_demo_finance() -> None:
+    client = _client()
+    demo = client.post("/api/v1/market-regime/analyse", data=DEMO_DATES)
+    upload = client.post(
+        "/api/v1/market-regime/analyse",
+        data={**DEMO_DATES, "data_source": "upload"},
+        files={"prices": ("v1_market_data.csv", Path(DEMO_CSV).read_bytes(), "text/csv")},
+    )
+    assert demo.status_code == 200
+    assert upload.status_code == 200
+    demo_body = demo.json()
+    upload_body = upload.json()
+    assert demo_body["data_source"] == "demo"
+    assert demo_body["data_label"] == "DEMO DATA"
+    assert upload_body["data_source"] == "upload"
+    assert upload_body["data_label"] is None
+    assert upload_body["markets"] == demo_body["markets"]
+    assert upload_body["as_of_date"] == demo_body["as_of_date"]
+    assert upload_body["evaluation_date"] == demo_body["evaluation_date"]
+    assert upload_body["benchmark_id"] == demo_body["benchmark_id"]
+    assert upload_body["validation_status"] == demo_body["validation_status"]
+
+
 def test_upload_rejects_oversized_content() -> None:
     payload = b"a" * (MAX_UPLOAD_BYTES + 1)
     response = _client().post(

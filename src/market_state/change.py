@@ -59,8 +59,11 @@ def compare_market_regime_snapshots(
 
     The snapshots must name the same market and the same relative-performance
     benchmark, and the previous observation date must be strictly earlier.
+    Each snapshot's component identities must match that snapshot.
     ``UNAVAILABLE`` is not produced here.
     """
+    _require_nested_identity(previous_snapshot)
+    _require_nested_identity(current_snapshot)
     if previous_snapshot.market_id != current_snapshot.market_id:
         raise MarketRegimeError(
             "CHANGE_SNAPSHOT_MISMATCH",
@@ -137,6 +140,32 @@ def calculate_market_regime_change(
         )
     previous = calculate_market_regime_snapshot(prices, market_id, benchmark_id, dates[-2])
     return compare_market_regime_snapshots(previous, current)
+
+
+def _require_nested_identity(snapshot: MarketRegimeSnapshot) -> None:
+    """Reject a hand-built snapshot whose components contradict its identity.
+
+    The production calculator already refuses this. The comparator checks again
+    so a manually assembled pair cannot be compared. Formulas are not involved.
+    """
+    components = (
+        snapshot.trend,
+        snapshot.momentum,
+        snapshot.volatility,
+        snapshot.relative_performance,
+    )
+    for component in components:
+        if component.market_id != snapshot.market_id or component.as_of_date != snapshot.as_of_date:
+            raise MarketRegimeError(
+                "CHANGE_SNAPSHOT_MISMATCH",
+                "a snapshot component identity does not match the snapshot",
+            )
+    benchmark = snapshot.relative_performance.benchmark_id
+    if benchmark.strip() == "":
+        raise MarketRegimeError(
+            "CHANGE_SNAPSHOT_MISMATCH",
+            "relative-performance benchmark identity is missing",
+        )
 
 
 def _ordered_dates(prices: pd.DataFrame, market_id: str, as_of_date: str) -> list[str]:

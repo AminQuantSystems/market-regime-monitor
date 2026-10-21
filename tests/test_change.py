@@ -161,12 +161,29 @@ def test_all_four_dimensions_keep_deterministic_order():
     ]
 
 
+def aligned(snapshot_value, market: str | None = None, as_of: str | None = None):
+    """Move a snapshot's outer identity and every nested component together."""
+    fields = {}
+    if market is not None:
+        fields["market_id"] = market
+    if as_of is not None:
+        fields["as_of_date"] = as_of
+    return dataclasses.replace(
+        snapshot_value,
+        trend=dataclasses.replace(snapshot_value.trend, **fields),
+        momentum=dataclasses.replace(snapshot_value.momentum, **fields),
+        volatility=dataclasses.replace(snapshot_value.volatility, **fields),
+        relative_performance=dataclasses.replace(snapshot_value.relative_performance, **fields),
+        **fields,
+    )
+
+
 @pytest.mark.parametrize(
     "mutate",
     [
-        (lambda previous, current: (dataclasses.replace(previous, market_id="QQQ"), current)),
-        (lambda previous, current: (dataclasses.replace(previous, as_of_date=current.as_of_date), current)),
-        (lambda previous, current: (dataclasses.replace(previous, as_of_date="2026-04-01"), dataclasses.replace(current, as_of_date="2026-03-02"))),
+        (lambda previous, current: (aligned(previous, market="QQQ"), current)),
+        (lambda previous, current: (aligned(previous, as_of=current.as_of_date), current)),
+        (lambda previous, current: (aligned(previous, as_of="2026-04-01"), aligned(current, as_of="2026-03-02"))),
         (
             lambda previous, current: (
                 dataclasses.replace(
@@ -186,6 +203,44 @@ def test_snapshot_pair_mismatch_fails_closed(mutate):
         compare_market_regime_snapshots(left, right)
     assert raised.value.code == "CHANGE_SNAPSHOT_MISMATCH"
     assert not isinstance(raised.value, MarketDataError)
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda previous, current: (
+            dataclasses.replace(previous, trend=dataclasses.replace(previous.trend, market_id="QQQ")),
+            current,
+        ),
+        lambda previous, current: (
+            previous,
+            dataclasses.replace(current, momentum=dataclasses.replace(current.momentum, as_of_date="2026-01-15")),
+        ),
+        lambda previous, current: (
+            previous,
+            dataclasses.replace(
+                current,
+                relative_performance=dataclasses.replace(current.relative_performance, benchmark_id="SPX"),
+            ),
+        ),
+        lambda previous, current: (
+            dataclasses.replace(
+                previous,
+                relative_performance=dataclasses.replace(previous.relative_performance, benchmark_id=""),
+            ),
+            current,
+        ),
+    ],
+)
+def test_nested_snapshot_identity_mismatch_is_rejected(mutate):
+    previous = snapshot("2026-03-01")
+    current = snapshot("2026-03-02")
+    left, right = mutate(previous, current)
+    with pytest.raises(MarketRegimeError) as raised:
+        compare_market_regime_snapshots(left, right)
+    assert raised.value.code == "CHANGE_SNAPSHOT_MISMATCH"
+    unchanged = compare_market_regime_snapshots(snapshot("2026-03-01"), snapshot("2026-03-02"))
+    assert unchanged.change_status == "UNCHANGED"
 
 
 def test_change_objects_are_frozen():

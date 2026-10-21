@@ -4,7 +4,7 @@ A deterministic market-state analytics application. It reduces major equity mark
 
 ![Market Regime Monitor board and Emerging Markets detail on the bundled demo](docs/images/market-state-board.png)
 
-The same validated input always produces the same result. Disagreements between the four dimensions are preserved. There is no fifth, composite regime.
+The same validated input always produces the same result. Disagreements between the four dimensions are preserved. There is no fifth, composite regime. The name uses regime for that visible four-part state, not for a single hidden score.
 
 ## What it does
 
@@ -28,7 +28,7 @@ The V1 universe is SPY, QQQ, IWM, EWU, EWG, EWJ, and EEM. ACWI is the common com
 
 | Dimension | What it measures |
 | --- | --- |
-| Direction | The Trend state from the adjusted close against its 50-observation and 200-observation simple moving averages. |
+| Direction | SMA-based trend classification using adjusted close, SMA50 and SMA200. It is not a swing-high/swing-low trend model. The screen shows Strong Uptrend, Uptrend, Neutral, Downtrend, and Strong Downtrend. The API still returns Strong Up, Up, Neutral, Down, and Strong Down. |
 | Momentum | Whether the 21-observation and 63-observation price pace agree, conflict, or are deteriorating. |
 | Volatility | 21-return annualised realised volatility, placed in a regime by its percentile against that market's own prior 252 readings. |
 | Relative Performance | The 63-observation active return of the market minus the ACWI return over the same observations. |
@@ -40,6 +40,8 @@ A market can be strong on one dimension and weak on another. The application doe
 ## What Changed
 
 What Changed compares the four categorical states with the immediately previous valid observation in the panel. A numerical move that stays inside the same state is not a change. The board stays quiet unless a label actually changes. The four possible dimensions, in order, are direction, momentum, volatility, and relative performance.
+
+Direction transitions use the public labels. Up to Strong Up is shown as Uptrend → Strong Uptrend. Momentum, Volatility, and Relative Performance keep their existing labels.
 
 If the panel is long enough for the current state but not for the previous complete snapshot, the status is unavailable. That is a result, not a failed request.
 
@@ -90,11 +92,11 @@ Client-side checks, such as the file-size notice, are there for the person using
 
 ## Testing
 
-The release-candidate suite, run locally:
+The V1.0.0 suite, run locally:
 
 - 327 Python tests passed, including finance unit and regression tests, deterministic golden fixtures, look-ahead checks, market isolation, and API contract tests.
 - The original 309 finance and monitoring tests still pass. Four further tests reject a manually assembled snapshot whose nested identity contradicts the snapshot.
-- 26 frontend behaviour tests passed, covering the board, the detail panel, CSV analysis, Return to Demo, stale-response handling, and focus after a mode change.
+- 28 frontend behaviour tests passed, covering the board, the detail panel, public Direction labels, CSV analysis, Return to Demo, stale-response handling, and focus after a mode change.
 - `python -m pip check` reported no broken requirements.
 - `npm audit --audit-level=high` and `npm audit --omit=dev --audit-level=high` reported no vulnerabilities.
 
@@ -175,4 +177,8 @@ MEEM_DESIGN_SYSTEM.md    visual system
 
 ## Branding
 
-The interface uses MEEM Technologies branding. MEEM Technologies branding and marks are proprietary to their owner. No software licence has been selected for this repository.
+The interface uses MEEM Technologies branding. MEEM Technologies branding and marks are proprietary to their owner.
+
+MEEM Technologies is a UK-based investment-technology engineering company building transparent, auditable software for international capital-markets workflows.
+
+Source code in this repository is licensed under the Apache License 2.0. See `LICENSE`. That licence does not grant a right to use the MEEM Technologies name, mark, logos, or other brand assets. Screenshots and documentation that contain the mark do not independently licence the mark. See `BRANDING.md`.

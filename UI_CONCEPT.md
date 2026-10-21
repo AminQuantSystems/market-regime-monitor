@@ -1,6 +1,6 @@
 # Interface concept
 
-**Status:** design specified and implemented. The branded board, row selection, detail panel, CSV upload controls, and Return to Demo are the V1 release candidate described in `PROJECT_STATE.md`. Visual tokens are in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`. Trend Score is kept in the API and is not shown in the detail panel.
+**Status:** design specified and implemented. The branded board, row selection, detail panel, CSV upload controls, and Return to Demo are the V1 release candidate described in `PROJECT_STATE.md`. Visual tokens are in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`. Trend Score is kept in the API and is not shown in the detail panel. Direction on screen uses Uptrend and Downtrend wording. The API Trend states are unchanged.
 
 ## Intent
 
@@ -56,19 +56,21 @@ A row is about 48–54 px. All seven markets fit the primary desktop view. Every
 Examples:
 
 ```text
-Nasdaq 100  | STRONG UP | ACCELERATING  | ELEVATED | OUTPERFORM        | M
-UK Equities | DOWN      | DETERIORATING | HIGH     | STRONG OUTPERFORM | V
+Nasdaq 100  | STRONG UPTREND | ACCELERATING  | ELEVATED | OUTPERFORM        | M
+UK Equities | DOWNTREND      | DETERIORATING | HIGH     | STRONG OUTPERFORM | V
 ```
 
 The second row is a valid state. A falling market with deteriorating pace and high realised volatility can still be strongly ahead of ACWI.
 
 ## State cells
 
-Each cell shows the written category: STRONG UP, ACCELERATING, ELEVATED, OUTPERFORM. Colour reinforces the words. A small line or dot may sit beside the label. Stronger categories use heavier type and a small structural marker. They do not use a different hue.
+Each cell shows the written category: STRONG UPTREND, ACCELERATING, ELEVATED, OUTPERFORM. Colour reinforces the words. A small line or dot may sit beside the label. Stronger categories use heavier type and a small structural marker. They do not use a different hue.
+
+Direction on screen is Strong Uptrend, Uptrend, Neutral, Downtrend, or Strong Downtrend. Those words present the internal Trend states Strong Up, Up, Neutral, Down, and Strong Down. The API and the colour map keep the internal states. Momentum, Volatility, and Relative Performance are unchanged.
 
 Up and Strong Up share the positive hue. Down and Strong Down share the negative hue. Outperform and Strong Outperform share the positive hue. Colour is never the only difference.
 
-Cells do not use a large bright fill, a traffic light without text, a giant badge, an emoji, or a recommendation arrow. Ordinary labels such as STRONG UP, DOWN, ACCELERATING, DETERIORATING, HIGH, OUTPERFORM, and N/A are readable without a legend.
+Cells do not use a large bright fill, a traffic light without text, a giant badge, an emoji, or a recommendation arrow. Ordinary labels such as STRONG UPTREND, DOWNTREND, ACCELERATING, DETERIORATING, HIGH, OUTPERFORM, and N/A are readable without a legend.
 
 The scanning row does not show SMA50, SMA200, the 21-session or 63-session returns, pace, RV21, the volatility percentile, active return, or reason codes. The board answers what state. The detail panel answers why.
 

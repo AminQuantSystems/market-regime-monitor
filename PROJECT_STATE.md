@@ -2,14 +2,14 @@
 
 **Project:** Market Regime Monitor
 **Intended repository name, not created:** `market-regime-monitor`
-**Package version:** 0.1.0 in `pyproject.toml`. Recommended public tag, not created: `v1.0.0`.
+**Package version:** 1.0.0 in `pyproject.toml`. Future public tag, not created: `v1.0.0`.
 **As of:** 21 October 2026
 
 ## Phase
 
-Phase 2F — V1 release candidate prepared.
+Market Regime Monitor V1.0.0 is ready for owner-authorised publication.
 
-V1 feature development is frozen and complete. The finance core, API, and frontend are hardened. Accessibility and MEEM visual polish have had their final V1 review. The public README and screenshots are ready. Continuous integration is configured and has not been run on GitHub. The sensitive-data and history review is complete. There is no GitHub remote. Publication is not yet authorised. The recommended release is `v1.0.0`, subject to owner approval and a final publication audit.
+Functionality is complete and frozen. The finance core, API, and frontend are hardened. Public terminology is approved. Human-facing prose uses British English. The source-code licence is Apache License 2.0. MEEM Technologies branding is proprietary and excluded from that licence. The historical machine-local working-copy path has been removed from Git history. The README and screenshots are public-ready. Continuous integration is configured and has not been run on GitHub. There is no GitHub remote. Publication has not been performed. The future release tag is `v1.0.0`, and it has not been created.
 
 ## What exists
 
@@ -58,7 +58,7 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Market Regime Snapshot: implemented and integrity-hardened. It assembles `TrendResult`, `MomentumResult`, `VolatilityResult`, and `RelativePerformanceResult` for one selected market and one as-of date. It does not call full-board validation. A component identity that contradicts the request fails with `MarketRegimeError` and `REGIME_COMPONENT_MISMATCH`. Direction is `trend.trend_state`. No composite directional regime exists. This assembly is not independent bank model validation or regulatory approval.
 - What Changed: implemented. It compares the four categorical labels on the current snapshot and the immediately previous observation. Statuses are `CHANGED`, `UNCHANGED`, and `UNAVAILABLE`. It calculates no finance.
 - Finance and monitoring core: frozen
-- Tests: 327 Python tests passed. The original 309 finance and monitoring tests remain passing. Four nested-identity checks were added to the pure comparator. Fourteen adapter tests cover the weekday demonstration contract, same-bytes demo/upload finance equivalence, categorical response literals, the request-validation envelope, and the OpenAPI enums. Frontend tests: 26 passed.
+- Tests: 327 Python tests passed. The original 309 finance and monitoring tests remain passing. Four nested-identity checks were added to the pure comparator. Fourteen adapter tests cover the weekday demonstration contract, same-bytes demo/upload finance equivalence, categorical response literals, the request-validation envelope, and the OpenAPI enums. Frontend tests: 28 passed, including the public Direction presentation labels.
 - MEEM production brand palette: locked
 - MEEM Toolkit Design System: v1.0 specified
 - Original finance tests: 309 passed, plus 4 nested-identity checks
@@ -102,9 +102,10 @@ One local measurement on 21 October 2026, Python 3.14, this Windows machine: ass
 - The pure comparator now rejects a manually constructed snapshot whose nested component market or date disagrees with the snapshot, and a relative-performance benchmark that is blank or disagrees with the other snapshot. The code remains `CHANGE_SNAPSHOT_MISMATCH`. Production formulas are unchanged.
 - Categorical API fields use closed literals. Reason codes stay strings. Omitted required form fields return HTTP 422 with `API_REQUEST_VALIDATION` and category `request`. Explicit adapter errors are unchanged.
 - What Changed stays the fifth detail section. Removing the Trend Score row is the only vertical change. Section spacing was left at 12 px because tighter gaps would make the evidence harder to read. At 1600 × 1400 the whole detail fits. At 1366 × 768, with the upload form open, What Changed begins below the fold. That short scroll is accepted V1 behaviour.
-- No software licence has been selected. Do not publish until the owner chooses one.
+- Source code is licensed under the Apache License 2.0. MEEM Technologies branding is proprietary and is not included in that licence. See `LICENSE` and `BRANDING.md`.
+- Direction on screen uses Strong Uptrend, Uptrend, Neutral, Downtrend, and Strong Downtrend. The API Trend states remain Strong Up, Up, Neutral, Down, and Strong Down.
 - No GitHub remote, release, or tag has been created.
 
 ## Next approved action
 
-Stop after the Phase 2F release-candidate report. Do not push, publish, or tag until the owner completes the final publication audit.
+Stop after the local V1.0.0 publication-preparation report. Do not create a remote, push, publish, or tag until the owner authorises publication.

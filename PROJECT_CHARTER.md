@@ -6,7 +6,7 @@
 
 ## Product definition
 
-Market Regime Monitor is a deterministic market-regime scanner. One of its four instruments is Benchmark Relative Performance against ACWI.
+Market Regime Monitor is a deterministic market-state analytics application. The regime is the transparent four-dimensional state — Direction, Momentum, Volatility, and Relative Performance — not one hidden composite score. One of its four instruments is Benchmark Relative Performance against ACWI.
 
 A user should be able to understand the core state of a market in approximately two seconds, without interpreting a conventional multi-line technical-analysis chart.
 
@@ -49,7 +49,7 @@ V1 will not:
 - present a chart crowded with technical-indicator lines
 - claim that the system predicts turning points
 
-Strong Up and Strong Down are Trend states. The interface may show them under the heading Direction. They are not a composite of the other instruments, and they are not trade instructions.
+The internal Trend states are Strong Up, Up, Neutral, Down, and Strong Down. The public interface presents them as Strong Uptrend, Uptrend, Neutral, Downtrend, and Strong Downtrend. They are not a composite of the other instruments, and they are not trade instructions.
 
 ## Design constraints
 

@@ -5,6 +5,7 @@ call to the production functions. The snapshot is compared with independent
 component calls only after those expectations are fixed.
 """
 
+import dataclasses
 import inspect
 
 import pandas as pd
@@ -12,6 +13,8 @@ import pytest
 
 from market_state import (
     MarketDataError,
+    MarketRegimeError,
+    MarketStateError,
     calculate_market_regime_snapshot,
     calculate_momentum,
     calculate_relative_performance,
@@ -309,3 +312,37 @@ def test_seven_board_markets_are_isolated_and_share_acwi():
         assert assembled == snapshot_for(alone, market)
         assert assembled.trend.market_id == market
         assert assembled.relative_performance.market_id == market
+
+
+def test_market_data_error_remains_a_value_error():
+    error = MarketDataError("DATA_INVALID_PRICE", "price is not usable")
+    assert isinstance(error, MarketStateError)
+    assert isinstance(error, ValueError)
+    assert not isinstance(error, MarketRegimeError)
+    assert error.code == "DATA_INVALID_PRICE"
+    assert str(error) == "price is not usable"
+
+
+@pytest.mark.parametrize(
+    ("component", "field", "value"),
+    [
+        ("calculate_trend", "market_id", "QQQ"),
+        ("calculate_momentum", "market_id", "QQQ"),
+        ("calculate_volatility", "as_of_date", "1999-01-01"),
+        ("calculate_relative_performance", "market_id", "QQQ"),
+        ("calculate_relative_performance", "as_of_date", "1999-01-01"),
+        ("calculate_relative_performance", "benchmark_id", "SPX"),
+    ],
+)
+def test_contradictory_component_identity_fails_closed(monkeypatch, component, field, value):
+    real = getattr(regime_module, component)
+
+    def contradictory(*args, **kwargs):
+        return dataclasses.replace(real(*args, **kwargs), **{field: value})
+
+    monkeypatch.setattr(regime_module, component, contradictory)
+    with pytest.raises(MarketRegimeError) as raised:
+        snapshot_for(golden_panel())
+    assert raised.value.code == "REGIME_COMPONENT_MISMATCH"
+    assert isinstance(raised.value, MarketStateError)
+    assert not isinstance(raised.value, MarketDataError)

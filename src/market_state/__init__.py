@@ -6,7 +6,7 @@ of its own. There is no composite directional regime. What Changed is not
 included.
 """
 
-from market_state.errors import MarketDataError
+from market_state.errors import MarketDataError, MarketRegimeError, MarketStateError
 from market_state.momentum import MomentumResult, calculate_momentum, classify_momentum
 from market_state.regime import MarketRegimeSnapshot, calculate_market_regime_snapshot
 from market_state.relative_performance import (
@@ -26,7 +26,9 @@ from market_state.volatility import (
 
 __all__ = [
     "MarketDataError",
+    "MarketRegimeError",
     "MarketRegimeSnapshot",
+    "MarketStateError",
     "MomentumResult",
     "RelativePerformanceResult",
     "TrendResult",

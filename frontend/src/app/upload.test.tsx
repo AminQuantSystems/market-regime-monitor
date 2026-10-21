@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react"
+import { act, fireEvent, render, screen, within } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { DEMO_AS_OF_DATE, DEMO_EVALUATION_DATE } from "../demo"
 import type { BoardResponse } from "../types/board"
@@ -291,5 +291,91 @@ describe("CSV analysis", () => {
     expect(screen.queryByText("DEMO DATA")).not.toBeInTheDocument()
     expect(screen.getByLabelText("EVALUATION DATE")).toHaveValue("2026-03-06")
     expect(screen.getByLabelText("AS-OF DATE")).toHaveValue("2026-02-27")
+  })
+
+  it("does not show a stale upload that resolves after Return to Demo", async () => {
+    const upload = deferredResponse()
+    const demo = deferredResponse()
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockImplementationOnce(() => jsonResponse(200, boardFixture))
+        .mockImplementationOnce(() => upload.promise)
+        .mockImplementationOnce(() => demo.promise),
+    )
+    await renderDemo()
+    fireEvent.click(screen.getByRole("button", { name: "USE CSV" }))
+    chooseFile(new File(["date,market_id,adjusted_close\n"], "late.csv", { type: "text/csv" }))
+    setDates("2024-06-03", "2024-06-03")
+    fireEvent.click(screen.getByRole("button", { name: "ANALYSE CSV" }))
+    expect(await screen.findByRole("status")).toHaveTextContent("ANALYSING MARKET STATE…")
+
+    fireEvent.click(screen.getByRole("button", { name: "RETURN TO DEMO" }))
+    expect(screen.getByText("DEMO DATA")).toBeInTheDocument()
+    expect(screen.queryByText("late.csv")).not.toBeInTheDocument()
+    expect(screen.queryByText("VALID")).not.toBeInTheDocument()
+    expect(screen.queryByRole("table")).not.toBeInTheDocument()
+
+    await act(async () => {
+      upload.resolve(await jsonResponse(200, uploadFixture))
+    })
+    expect(screen.queryByText("UPLOADED CSV")).not.toBeInTheDocument()
+    expect(screen.queryByText("late.csv")).not.toBeInTheDocument()
+    expect(screen.queryByText("2024-06-03")).not.toBeInTheDocument()
+    expect(screen.queryByText("VALID")).not.toBeInTheDocument()
+    expect(screen.queryByRole("table")).not.toBeInTheDocument()
+    expect(screen.getByText("DEMO DATA")).toBeInTheDocument()
+    expect(screen.getByRole("status")).toHaveTextContent("ANALYSING MARKET STATE…")
+
+    await act(async () => {
+      demo.resolve(await jsonResponse(200, boardFixture))
+    })
+    expect(await screen.findByRole("table")).toBeInTheDocument()
+    expect(screen.getByText("DEMO DATA")).toBeInTheDocument()
+    expect(screen.getByText("VALID")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "S&P 500 SPY" })).toHaveAttribute("aria-pressed", "true")
+    expect(screen.queryByText("UPLOADED CSV")).not.toBeInTheDocument()
+    expect(screen.queryByText("late.csv")).not.toBeInTheDocument()
+    expect(screen.queryByText("2024-06-03")).not.toBeInTheDocument()
+  })
+
+  it("keeps the newer analysis when an older response resolves last", async () => {
+    const older = deferredResponse()
+    const newer = deferredResponse()
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockImplementationOnce(() => jsonResponse(200, boardFixture))
+        .mockImplementationOnce(() => older.promise)
+        .mockImplementationOnce(() => newer.promise),
+    )
+    await renderDemo()
+    fireEvent.click(screen.getByRole("button", { name: "USE CSV" }))
+    chooseFile(new File(["date,market_id,adjusted_close\n"], "older.csv", { type: "text/csv" }))
+    setDates("2024-06-03", "2024-06-03")
+    fireEvent.click(screen.getByRole("button", { name: "ANALYSE CSV" }))
+    expect(await screen.findByRole("status")).toHaveTextContent("ANALYSING MARKET STATE…")
+    fireEvent.click(screen.getByRole("button", { name: "RETURN TO DEMO" }))
+
+    await act(async () => {
+      newer.resolve(await jsonResponse(200, boardFixture))
+    })
+    expect(await screen.findByRole("table")).toBeInTheDocument()
+    expect(screen.getByText("DEMO DATA")).toBeInTheDocument()
+    expect(screen.getByText("VALID")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "S&P 500 SPY" })).toHaveAttribute("aria-pressed", "true")
+
+    await act(async () => {
+      older.resolve(await jsonResponse(200, uploadFixture))
+    })
+    expect(screen.getByText("DEMO DATA")).toBeInTheDocument()
+    expect(screen.getByText("VALID")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "S&P 500 SPY" })).toHaveAttribute("aria-pressed", "true")
+    expect(screen.queryByText("UPLOADED CSV")).not.toBeInTheDocument()
+    expect(screen.queryByText("older.csv")).not.toBeInTheDocument()
+    expect(screen.queryByText("2024-06-03")).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Nasdaq 100 QQQ" })).toHaveAttribute("aria-pressed", "false")
   })
 })

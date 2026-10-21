@@ -1,6 +1,7 @@
 import { StateCell } from "./StateCell"
 import { formatCount, formatPercent, formatPercentile, formatPrice } from "../design-system/format"
 import {
+  displayTrendState,
   presentChange,
   presentMomentum,
   presentRelative,
@@ -17,6 +18,13 @@ const DIMENSION_LABEL: Record<ChangeDimension, string> = {
   momentum: "MOMENTUM",
   volatility: "VOLATILITY",
   relative_performance: "RELATIVE PERFORMANCE",
+}
+
+function displayState(dimension: ChangeDimension, state: string): string {
+  if (dimension === "direction") {
+    return displayTrendState(state as MarketReading["current"]["trend"]["trend_state"])
+  }
+  return state
 }
 
 function statePresentation(dimension: ChangeDimension, state: string): Presentation {
@@ -69,12 +77,12 @@ function ChangeDetail({ change }: { change: ChangeReading }) {
               <p className={styles.dimension}>{DIMENSION_LABEL[transition.dimension]}</p>
               <p className={styles.flow}>
                 <StateCell
-                  label={transition.previous_state}
+                  label={displayState(transition.dimension, transition.previous_state)}
                   presentation={statePresentation(transition.dimension, transition.previous_state)}
                 />
                 <span className={styles.arrow}>→</span>
                 <StateCell
-                  label={transition.current_state}
+                  label={displayState(transition.dimension, transition.current_state)}
                   presentation={statePresentation(transition.dimension, transition.current_state)}
                 />
               </p>
@@ -101,7 +109,7 @@ export function MarketDetailPanel({ market }: { market: MarketReading }) {
       <section className={styles.section}>
         <h3 className={styles.sectionLabel}>DIRECTION</h3>
         <div className={styles.state}>
-          <StateCell label={trend.trend_state} presentation={presentTrend(trend.trend_state)} />
+          <StateCell label={displayTrendState(trend.trend_state)} presentation={presentTrend(trend.trend_state)} />
         </div>
         <Metrics
           rows={[

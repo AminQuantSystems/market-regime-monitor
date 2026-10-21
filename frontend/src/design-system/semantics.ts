@@ -51,8 +51,20 @@ const change: Record<ChangeStatus, Presentation> = {
   UNAVAILABLE: { semantic: "unavailable", emphasis: "base" },
 }
 
+const trendLabel: Record<TrendState, string> = {
+  "Strong Up": "Strong Uptrend",
+  Up: "Uptrend",
+  Neutral: "Neutral",
+  Down: "Downtrend",
+  "Strong Down": "Strong Downtrend",
+}
+
 export function presentTrend(state: TrendState): Presentation {
   return trend[state]
+}
+
+export function displayTrendState(state: TrendState): string {
+  return trendLabel[state]
 }
 
 export function presentMomentum(state: MomentumState): Presentation {

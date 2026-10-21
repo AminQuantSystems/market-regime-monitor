@@ -1,6 +1,6 @@
 import { ChangeCell } from "./ChangeCell"
 import { StateCell } from "./StateCell"
-import { presentMomentum, presentRelative, presentTrend, presentVolatility } from "../design-system/semantics"
+import { displayTrendState, presentMomentum, presentRelative, presentTrend, presentVolatility } from "../design-system/semantics"
 import type { MarketReading } from "../types/board"
 import styles from "./MarketStateBoard.module.css"
 
@@ -46,7 +46,7 @@ export function MarketStateBoard({ markets, selectedId, onSelect }: MarketStateB
                 </button>
               </th>
               <td>
-                <StateCell label={market.current.trend.trend_state} presentation={presentTrend(market.current.trend.trend_state)} />
+                <StateCell label={displayTrendState(market.current.trend.trend_state)} presentation={presentTrend(market.current.trend.trend_state)} />
               </td>
               <td>
                 <StateCell

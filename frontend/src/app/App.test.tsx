@@ -34,7 +34,8 @@ describe("Market State Board", () => {
       "Emerging Markets EEM",
     ])
     expect(screen.queryByRole("rowheader", { name: /ACWI/ })).not.toBeInTheDocument()
-    expect(screen.getAllByText("Strong Up").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Strong Uptrend").length).toBeGreaterThan(0)
+    expect(boardFixture.markets[0].current.trend.trend_state).toBe("Strong Up")
     expect(screen.getByText("Accelerating")).toBeInTheDocument()
     expect(screen.getAllByText("Deteriorating").length).toBeGreaterThan(0)
     expect(screen.getByText("Elevated")).toBeInTheDocument()

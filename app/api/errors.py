@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from market_state.errors import MarketDataError, MarketRegimeError
+
+_REQUEST_VALIDATION_MESSAGE = "The request is missing or contains an invalid required field."
 
 
 class APIError(Exception):
@@ -35,6 +38,13 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(MarketRegimeError)
     async def regime_error(_request, exc: MarketRegimeError) -> JSONResponse:
         return JSONResponse(status_code=500, content=_body(exc.code, str(exc), "regime"))
+
+    @app.exception_handler(RequestValidationError)
+    async def request_validation_error(_request, _exc: RequestValidationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content=_body("API_REQUEST_VALIDATION", _REQUEST_VALIDATION_MESSAGE, "request"),
+        )
 
     @app.exception_handler(Exception)
     async def unexpected_error(_request, _exc: Exception) -> JSONResponse:

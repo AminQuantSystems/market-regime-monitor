@@ -6,6 +6,40 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
+TrendState = Literal["Strong Up", "Up", "Neutral", "Down", "Strong Down"]
+MomentumState = Literal["Accelerating", "Positive", "Mixed", "Negative", "Deteriorating"]
+VolatilityRegime = Literal["Low", "Normal", "Elevated", "High"]
+RelativePerformanceState = Literal[
+    "Strong Outperform",
+    "Outperform",
+    "Neutral",
+    "Underperform",
+    "Strong Underperform",
+]
+ChangeStatus = Literal["CHANGED", "UNCHANGED", "UNAVAILABLE"]
+ChangeDimension = Literal["direction", "momentum", "volatility", "relative_performance"]
+CategoricalState = Literal[
+    "Strong Up",
+    "Up",
+    "Neutral",
+    "Down",
+    "Strong Down",
+    "Accelerating",
+    "Positive",
+    "Mixed",
+    "Negative",
+    "Deteriorating",
+    "Low",
+    "Normal",
+    "Elevated",
+    "High",
+    "Strong Outperform",
+    "Outperform",
+    "Underperform",
+    "Strong Underperform",
+]
+ErrorCategory = Literal["request", "market_data", "regime", "unexpected"]
+
 
 class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -18,7 +52,7 @@ class TrendDTO(_Model):
     sma_50: float
     sma_200: float
     trend_score: int
-    trend_state: str
+    trend_state: TrendState
     reason_code: str
 
 
@@ -30,7 +64,7 @@ class MomentumDTO(_Model):
     return_63: float
     pace_21: float
     pace_63: float
-    momentum_state: str
+    momentum_state: MomentumState
     reason_code: str
 
 
@@ -43,7 +77,7 @@ class VolatilityDTO(_Model):
     historical_equal_count: int
     historical_reference_size: int
     historical_percentile: float
-    volatility_regime: str
+    volatility_regime: VolatilityRegime
     reason_code: str
 
 
@@ -56,7 +90,7 @@ class RelativePerformanceDTO(_Model):
     asset_return_63: float
     benchmark_return_63: float
     active_return_63: float
-    relative_performance_state: str
+    relative_performance_state: RelativePerformanceState
     reason_code: str
 
 
@@ -68,13 +102,13 @@ class CurrentDTO(_Model):
 
 
 class TransitionDTO(_Model):
-    dimension: str
-    previous_state: str
-    current_state: str
+    dimension: ChangeDimension
+    previous_state: CategoricalState
+    current_state: CategoricalState
 
 
 class ChangeDTO(_Model):
-    status: str
+    status: ChangeStatus
     reason_code: str
     previous_as_of_date: str | None
     transitions: list[TransitionDTO]
@@ -101,7 +135,7 @@ class BoardResponse(_Model):
 class ErrorBody(_Model):
     code: str
     message: str
-    category: str
+    category: ErrorCategory
 
 
 class ErrorResponse(_Model):

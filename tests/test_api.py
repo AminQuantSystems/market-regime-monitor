@@ -13,9 +13,12 @@ from fastapi.testclient import TestClient
 from market_state.change import calculate_market_regime_change
 from market_state.validation import validate_market_data
 
+from pydantic import ValidationError
+
 from app.api.configuration import v1_configuration
 from app.api.input import DEMO_CSV, MAX_UPLOAD_BYTES
 from app.api.main import create_app
+from app.api.schemas import BoardResponse
 
 DEMO_AS_OF = "2026-03-06"
 DEMO_DATES = {"data_source": "demo", "evaluation_date": DEMO_AS_OF, "as_of_date": DEMO_AS_OF}
@@ -66,6 +69,7 @@ def test_demo_board_matches_finance_core() -> None:
         snapshot = change.current_snapshot
         current = market["current"]
         assert current["trend"]["trend_state"] == snapshot.trend.trend_state
+        assert current["trend"]["trend_score"] == snapshot.trend.trend_score
         assert current["trend"]["reason_code"] == snapshot.trend.reason_code
         assert current["trend"]["sma_50"] == _json_number(snapshot.trend.sma_50)
         assert current["trend"]["sma_200"] == _json_number(snapshot.trend.sma_200)
@@ -241,6 +245,80 @@ def test_unexpected_exception_hides_the_traceback(monkeypatch: pytest.MonkeyPatc
     assert "Traceback" not in response.text
     assert "secret panel" not in response.text
     assert "RuntimeError" not in response.text
+
+
+def test_missing_required_fields_use_the_project_envelope() -> None:
+    client = _client()
+    cases = [
+        {"evaluation_date": DEMO_AS_OF, "as_of_date": DEMO_AS_OF},
+        {"data_source": "demo", "as_of_date": DEMO_AS_OF},
+        {"data_source": "demo", "evaluation_date": DEMO_AS_OF},
+    ]
+    for payload in cases:
+        response = client.post("/api/v1/market-regime/analyse", data=payload)
+        assert response.status_code == 422
+        body = response.json()
+        assert "detail" not in body
+        assert set(body) == {"error"}
+        error = body["error"]
+        assert error["code"] == "API_REQUEST_VALIDATION"
+        assert error["category"] == "request"
+        assert error["message"] == "The request is missing or contains an invalid required field."
+        assert "Traceback" not in response.text
+        assert "loc" not in response.text
+
+
+def test_invalid_categorical_values_fail_the_response_model() -> None:
+    payload = _client().post("/api/v1/market-regime/analyse", data=DEMO_DATES).json()
+    trend = json.loads(json.dumps(payload))
+    trend["markets"][0]["current"]["trend"]["trend_state"] = "Bullish"
+    with pytest.raises(ValidationError):
+        BoardResponse.model_validate(trend)
+    change = json.loads(json.dumps(payload))
+    change["markets"][0]["change"]["status"] = "MAYBE"
+    with pytest.raises(ValidationError):
+        BoardResponse.model_validate(change)
+    assert "trend_score" in payload["markets"][0]["current"]["trend"]
+
+
+def test_openapi_exposes_categorical_enums() -> None:
+    schemas = create_app().openapi()["components"]["schemas"]
+    assert set(schemas["TrendDTO"]["properties"]["trend_state"]["enum"]) == {
+        "Strong Up",
+        "Up",
+        "Neutral",
+        "Down",
+        "Strong Down",
+    }
+    assert set(schemas["MomentumDTO"]["properties"]["momentum_state"]["enum"]) == {
+        "Accelerating",
+        "Positive",
+        "Mixed",
+        "Negative",
+        "Deteriorating",
+    }
+    assert set(schemas["VolatilityDTO"]["properties"]["volatility_regime"]["enum"]) == {
+        "Low",
+        "Normal",
+        "Elevated",
+        "High",
+    }
+    assert set(schemas["RelativePerformanceDTO"]["properties"]["relative_performance_state"]["enum"]) == {
+        "Strong Outperform",
+        "Outperform",
+        "Neutral",
+        "Underperform",
+        "Strong Underperform",
+    }
+    assert set(schemas["ChangeDTO"]["properties"]["status"]["enum"]) == {"CHANGED", "UNCHANGED", "UNAVAILABLE"}
+    assert set(schemas["TransitionDTO"]["properties"]["dimension"]["enum"]) == {
+        "direction",
+        "momentum",
+        "volatility",
+        "relative_performance",
+    }
+    assert "enum" not in schemas["TrendDTO"]["properties"]["reason_code"]
+    assert "trend_score" in schemas["TrendDTO"]["properties"]
 
 
 def test_adapter_source_has_no_finance_formula() -> None:

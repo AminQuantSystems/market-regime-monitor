@@ -206,7 +206,7 @@ N = 252
 historical_percentile = 100 * (L + 0.5 * E) / N
 ```
 
-Values strictly below today's RV21 receive full weight. Values exactly equal to it receive half weight. Values strictly above it receive zero weight. Ties therefore sit at the middle of their tied block, which is the average-rank treatment used in standard non-parametric ranking, including NIST ranking guidance for tied observations. Comparisons are exact. There is no tolerance, no epsilon, no interpolation, and no external statistics routine.
+Values strictly below today's RV21 receive full weight. Values exactly equal to it receive half weight. Values strictly above it receive zero weight. A value identical to its entire historical reference set receives percentile 50. This is a deliberate half-weight / mid-distribution tie convention used by Market Regime Monitor. It is conceptually related to handling ties at the middle of their tied block. It is not the conventional average of the ranks `L+1` through `L+E`, which is `L + (E + 1) / 2` and sits half a rank above `L + 0.5 * E`. The implemented equation is not attributed to an external ranking standard. Comparisons are exact. There is no tolerance, no epsilon, no interpolation, and no external statistics routine.
 
 | Regime | Rule | Reason code |
 |---|---|---|

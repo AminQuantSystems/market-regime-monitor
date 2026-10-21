@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 2B — UI technology and application architecture approved.
+Phase 2C — first end-to-end Market State Board vertical slice implemented.
 
 ## What exists
 
@@ -24,6 +24,9 @@ Phase 2B — UI technology and application architecture approved.
 - The MEEM Toolkit Design System v1.0 in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`
 - The Market State Board and detail specification in `UI_CONCEPT.md`
 - The UI technology and API architecture in `UI_ARCHITECTURE.md`
+- A thin FastAPI adapter in `app/api/`
+- A synthetic demonstration panel in `app/demo/`
+- A React, TypeScript, and Vite board in `frontend/`
 - This file, plus the read-only Windows/Mac plan
 
 ## History rule
@@ -53,19 +56,24 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Market Regime Snapshot: implemented and integrity-hardened. It assembles `TrendResult`, `MomentumResult`, `VolatilityResult`, and `RelativePerformanceResult` for one selected market and one as-of date. It does not call full-board validation. A component identity that contradicts the request fails with `MarketRegimeError` and `REGIME_COMPONENT_MISMATCH`. Direction is `trend.trend_state`. No composite directional regime exists. This assembly is not independent bank model validation or regulatory approval.
 - What Changed: implemented. It compares the four categorical labels on the current snapshot and the immediately previous observation. Statuses are `CHANGED`, `UNCHANGED`, and `UNAVAILABLE`. It calculates no finance.
 - Finance and monitoring core: frozen for V1 UI work
-- Tests: 309 passed
+- Tests: 319 passed. The original 309 finance and monitoring tests are unchanged and passing. Ten adapter tests were added.
 - MEEM production brand palette: locked
 - MEEM Toolkit Design System: v1.0 specified
-- Market State Board: specified, not implemented
-- Detail panel: specified, not implemented
-- Frontend: React, TypeScript, and Vite approved, not implemented
-- Backend UI adapter: FastAPI approved, not implemented
-- V1 data input: architecture specified, implementation not started
-- UI implementation: not started
+- Original finance tests: 309 passed, and the suite remains green with the adapter tests
+- FastAPI adapter: first slice implemented
+- Demo source: implemented
+- CSV upload API boundary: implemented
+- Frontend: React, TypeScript, and Vite implemented
+- MEEM design-token adapter: implemented
+- Application shell: implemented
+- Market State Board: implemented
+- Detail panel: not implemented
+- Row selection: not implemented
+- Charts: not implemented
 - Live or vendor market data: not implemented
 - Backtesting: not implemented
-- Database: not required for V1
-- Authentication: not required for V1
+- Database: none
+- Authentication: none
 - Mac integration: not authorised
 - GitHub publication: none
 - Current snapshot minimum: 274
@@ -89,4 +97,4 @@ The production calculation path creates snapshots through the integrity-hardened
 
 ## Next approved action
 
-Stop after Phase 2B. Do not implement the UI or the FastAPI adapter, and do not change the frozen finance core, until that work is authorised.
+Stop after Phase 2C. Do not implement the detail panel, charts, or live data until that work is authorised.

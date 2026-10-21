@@ -298,6 +298,24 @@ An integration test renders the board from an API fixture. An end-to-end pass lo
 
 Design-system checks later confirm that CSS colours used for meaning come from the MEEM tokens, that every approved state has a semantic mapping, and that no state is left unmapped. Pixel screenshots of every cell are not the plan. A later visual check of the board and the detail panel is enough if one is added.
 
+## Local run
+
+From the repository root, with the finance package and the `ui` extra installed:
+
+```text
+.venv\Scripts\python.exe -m uvicorn app.api.main:app --host 127.0.0.1 --port 8000
+```
+
+From `frontend/`, with Node.js available:
+
+```text
+npm run dev
+```
+
+Vite serves the board at `http://127.0.0.1:5173` and proxies `/api` to the FastAPI process. The screen loads the bundled demonstration panel for `2026-03-01`. Those dates are fixed. They are not taken from the clock.
+
+`npm test`, `npm run typecheck`, and `npm run build` regenerate `frontend/src/design-system/tokens.generated.css` from `MEEM_DESIGN_TOKENS.json` before they run. The generated file is not a second palette.
+
 ## Local development and build
 
 Two processes, with no Docker requirement and no extra orchestrator:

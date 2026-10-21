@@ -58,6 +58,7 @@ Strong Up and Strong Down are Trend states. The interface may show them under th
 - Missing, stale, or insufficient history stops the affected result with an explicit error. Rows are not silently dropped and NaNs are not silently filled.
 - Calculations use only information available on or before the observation date. No look-ahead.
 - Volatility describes magnitude. It does not make Trend more bullish or more bearish.
+- MEEM products share one visual system, specified in `MEEM_DESIGN_SYSTEM.md`. Brand colour identifies MEEM. Semantic colour identifies a financial or system meaning. The same meaning uses the same semantic colour in every MEEM tool.
 
 ## Original Phase 0 boundary
 

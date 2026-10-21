@@ -1,0 +1,110 @@
+{
+  "name": "MEEM Toolkit Design System",
+  "version": "1.0",
+  "framework": null,
+  "brand": {
+    "identity": "MEEM TECHNOLOGIES",
+    "descriptor": "ENGINEERING INTELLIGENCE",
+    "locked": true,
+    "approval_required_to_change": true,
+    "deep_sapphire": {
+      "hex": "#052689",
+      "rgb": [5, 38, 137]
+    },
+    "jet_black": {
+      "hex": "#0D0D0D",
+      "rgb": [13, 13, 13]
+    },
+    "white": {
+      "hex": "#FFFFFF",
+      "rgb": [255, 255, 255]
+    },
+    "charcoal": {
+      "hex": "#6E6E6E",
+      "rgb": [110, 110, 110]
+    }
+  },
+  "application": {
+    "dark": {
+      "canvas": "#0D0D0D",
+      "surface_1": "#111621",
+      "surface_2": "#161D2B",
+      "surface_3": "#1B2536",
+      "border_subtle": "#28354C",
+      "border_interactive": "#5B6E93",
+      "text_primary": "#F7F9FC",
+      "text_secondary": "#B9C1D0",
+      "text_muted": "#7F899B",
+      "accent_accessible": "#6D8CFF"
+    },
+    "light": {
+      "canvas": "#F7F8FC",
+      "surface_1": "#FFFFFF",
+      "surface_2": "#F0F3F8",
+      "border_subtle": "#D8DEE9",
+      "border_interactive": "#7A8799",
+      "text_primary": "#0D0D0D",
+      "text_secondary": "#4D5564",
+      "text_muted": "#6E6E6E",
+      "accent": "#052689"
+    }
+  },
+  "semantic": {
+    "positive": {
+      "dark": "#2EA579",
+      "light": "#1F6F55"
+    },
+    "negative": {
+      "dark": "#DE6672",
+      "light": "#A73A48"
+    },
+    "attention": {
+      "dark": "#D49A2A",
+      "light": "#8A5C00"
+    },
+    "neutral": {
+      "dark": "#8B95A5",
+      "light": "#4D5564"
+    },
+    "information": {
+      "dark": "#6D8CFF",
+      "light": "#2446A8"
+    },
+    "unavailable": {
+      "dark": "#7F899B",
+      "light": "#5D6572"
+    },
+    "error": {
+      "dark": "#E36A75",
+      "light": "#B42318"
+    }
+  },
+  "typography": {
+    "family": ["Montserrat", "Inter", "Segoe UI", "Arial", "sans-serif"],
+    "numerals": "tabular",
+    "product_title": {"size_px": 20, "weight": 600},
+    "section_heading": {"size_px": 16, "weight": 600},
+    "market_name": {"size_px": 14, "weight": 600},
+    "state_label": {"size_px": [12, 13], "weight": 600},
+    "secondary_ticker": {"size_px": 11, "weight": 500},
+    "column_heading": {"size_px": [10, 11], "weight": 600, "transform": "uppercase"},
+    "financial_numeric": {"size_px": [12, 13], "weight": 500},
+    "reason_code": {"size_px": [10, 11], "weight": 500, "family_optional": "monospace"}
+  },
+  "spacing": {
+    "base_px": 4,
+    "scale_px": [4, 8, 12, 16, 24, 32, 48]
+  },
+  "radius": {
+    "min_px": 2,
+    "max_px": 4
+  },
+  "border": {
+    "structural_px": 1,
+    "selected_marker_px": 2
+  },
+  "motion": {
+    "duration_ms": [120, 160],
+    "respect_reduced_motion": true
+  }
+}

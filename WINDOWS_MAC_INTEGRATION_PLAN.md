@@ -1,7 +1,7 @@
 # Windows / Mac integration plan
 
 **Status: READ-ONLY PLANNING ONLY.**
-Nothing in this document authorises a connection, a file transfer, a remote command, or a Mac workload.
+The finance instruments and the local application are implemented. This file does not authorise a connection, a file transfer, a remote command, or a Mac workload.
 
 This planning pass performs no SSH, SCP, SFTP, or other remote action.
 
@@ -14,7 +14,7 @@ This planning pass performs no SSH, SCP, SFTP, or other remote action.
 
 ## V1 may not need the Mac
 
-The proposed V1 calculations are moving averages, returns, a 21-return realised volatility, a trailing percentile, and benchmark-relative performance. On a modest asset universe those steps are small. This plan does not authorise implementing them.
+The V1 calculations are moving averages, returns, a 21-return realised volatility, a trailing percentile, and benchmark-relative performance. On a modest asset universe those steps are small. They are implemented locally. This plan does not authorise running them on a Mac.
 
 Remote execution is not justified until a Windows-versus-Mac benchmark on a representative finance workload shows a material benefit. If the benchmark does not show that benefit, V1 runs entirely on Windows.
 

@@ -33,7 +33,7 @@ V1 focuses only on:
 - state transitions ("What changed?")
 - deterministic explainability
 
-V1 reads local, validated historical price data. It does not depend on a live market-data API. No production market-data vendor is selected. The approved V1 universe is the US-listed proxy set in `FINANCE_SPEC.md`: SPY, QQQ, IWM, EWU, EWG, EWJ and EEM, with ACWI as the common comparison benchmark for Benchmark Relative Performance. ACWI is not claimed to be the mandate-specific performance benchmark for every regional market. The product does not claim GIPS compliance, CFA approval, or MSCI methodology replication. Direct global-index feeds and FX are later extensions, not V1.
+V1 reads a local validated price panel: the bundled synthetic demonstration or a user-supplied CSV. It does not depend on a live market-data API. No production market-data vendor is selected. The approved V1 universe is the US-listed proxy set in `FINANCE_SPEC.md`: SPY, QQQ, IWM, EWU, EWG, EWJ and EEM, with ACWI as the common comparison benchmark for Benchmark Relative Performance. ACWI is not claimed to be the mandate-specific performance benchmark for every regional market. The product does not claim GIPS compliance, CFA approval, or MSCI methodology replication. Direct global-index feeds and FX are later extensions, not V1.
 
 The interface displays results. It does not calculate them.
 

@@ -1,13 +1,15 @@
 # Project state
 
 **Project:** Market Regime Monitor
-**Local root:** `<local-worktree>`
 **Intended repository name, not created:** `market-regime-monitor`
+**Package version:** 0.1.0 in `pyproject.toml`. Recommended public tag, not created: `v1.0.0`.
 **As of:** 21 October 2026
 
 ## Phase
 
-Phase 2E — CSV upload and Return to Demo workflow implemented.
+Phase 2F — V1 release candidate prepared.
+
+V1 feature development is frozen and complete. The finance core, API, and frontend are hardened. Accessibility and MEEM visual polish have had their final V1 review. The public README and screenshots are ready. Continuous integration is configured and has not been run on GitHub. The sensitive-data and history review is complete. There is no GitHub remote. Publication is not yet authorised. The recommended release is `v1.0.0`, subject to owner approval and a final publication audit.
 
 ## What exists
 
@@ -56,13 +58,13 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Market Regime Snapshot: implemented and integrity-hardened. It assembles `TrendResult`, `MomentumResult`, `VolatilityResult`, and `RelativePerformanceResult` for one selected market and one as-of date. It does not call full-board validation. A component identity that contradicts the request fails with `MarketRegimeError` and `REGIME_COMPONENT_MISMATCH`. Direction is `trend.trend_state`. No composite directional regime exists. This assembly is not independent bank model validation or regulatory approval.
 - What Changed: implemented. It compares the four categorical labels on the current snapshot and the immediately previous observation. Statuses are `CHANGED`, `UNCHANGED`, and `UNAVAILABLE`. It calculates no finance.
 - Finance and monitoring core: frozen
-- Tests: 320 passed. The original 309 finance and monitoring tests are unchanged and passing. Eleven adapter tests cover the weekday demonstration contract and same-bytes demo/upload finance equivalence.
+- Tests: 327 Python tests passed. The original 309 finance and monitoring tests remain passing. Four nested-identity checks were added to the pure comparator. Fourteen adapter tests cover the weekday demonstration contract, same-bytes demo/upload finance equivalence, categorical response literals, the request-validation envelope, and the OpenAPI enums. Frontend tests: 26 passed.
 - MEEM production brand palette: locked
 - MEEM Toolkit Design System: v1.0 specified
-- Original finance tests: 309 passed
+- Original finance tests: 309 passed, plus 4 nested-identity checks
 - FastAPI adapter: implemented
 - Synthetic demo: weekday-only, implemented. 275 Monday–Friday observations from 2025-02-17 through 2026-03-06. No exchange calendar.
-- Official MEEM mark: implemented
+- Official MEEM mark: implemented. The asset is unchanged. The header renders it at 24 px wide, about 43 px tall.
 - CSV upload API boundary: implemented
 - CSV upload user experience: implemented
 - Return to Demo: implemented
@@ -71,7 +73,7 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Application shell: implemented
 - Market State Board: implemented
 - Market row selection: implemented
-- Market Detail Panel: implemented
+- Market Detail Panel: implemented. Trend Score is not rendered. `trend_score` remains in the finance result and the API.
 - What Changed detail: implemented
 - Charts: not implemented
 - Live or vendor market data: not implemented
@@ -95,20 +97,14 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 
 One local measurement on 21 October 2026, Python 3.14, this Windows machine: assembling snapshots for SPY, QQQ, IWM, EWU, EWG, EWJ, and EEM from one synthetic 274-observation panel took 0.22 seconds. The same seven markets, each with What Changed, on one synthetic 275-observation panel took 0.32 seconds. The panel also contained ACWI. Both figures are diagnostic evidence only. They are not pass/fail limits. This workload provides no evidence that Mac offload is justified. No concurrency and no multiprocessing have been added. A later Mac measurement may matter for a large historical backtest, a parameter sweep, a scenario grid, or another large multi-period research workload. It is not relevant to the current seven-market snapshot or What Changed comparison.
 
-## Deferred findings
+## Release-candidate notes
 
-- DEFERRED LOW-PRIORITY PUBLIC-API HARDENING. The production calculation path creates snapshots through the integrity-hardened snapshot API. The lower-level pure comparator does not independently re-check malformed nested component identity on a manually constructed snapshot. This waits for a pre-publication phase. `change.py` was not altered in Phase 2A, Phase 2B, Phase 2C, Phase 2D, or Phase 2E.
-- DEFERRED API CONTRACT HARDENING. Categorical fields on the Pydantic response models remain plain strings. The frontend unions are closed. Tighten the Python literals before publication.
-- DEFERRED API ERROR-ENVELOPE HARDENING. A form submission that omits `evaluation_date` or `as_of_date` still returns FastAPI's default 422 `detail` body. The project error envelope is unchanged. This waits for pre-publication work.
-
-## Scheduled for Phase 2F
-
-These Phase 2D findings were not changed in Phase 2E:
-
-- The MEEM mark renders at 28 × 50 px and is slightly tall beside the title.
-- What Changed sits below the fold on common laptop heights.
-- Trend Score stays in the API and in the detail panel. The later polish is to hide it from the public V1 UI without removing it from the API.
+- The pure comparator now rejects a manually constructed snapshot whose nested component market or date disagrees with the snapshot, and a relative-performance benchmark that is blank or disagrees with the other snapshot. The code remains `CHANGE_SNAPSHOT_MISMATCH`. Production formulas are unchanged.
+- Categorical API fields use closed literals. Reason codes stay strings. Omitted required form fields return HTTP 422 with `API_REQUEST_VALIDATION` and category `request`. Explicit adapter errors are unchanged.
+- What Changed stays the fifth detail section. Removing the Trend Score row is the only vertical change. Section spacing was left at 12 px because tighter gaps would make the evidence harder to read. At 1600 × 1400 the whole detail fits. At 1366 × 768, with the upload form open, What Changed begins below the fold. That short scroll is accepted V1 behaviour.
+- No software licence has been selected. Do not publish until the owner chooses one.
+- No GitHub remote, release, or tag has been created.
 
 ## Next approved action
 
-Stop after Phase 2E. Do not begin Phase 2F, charts, or live data until that work is authorised.
+Stop after the Phase 2F release-candidate report. Do not push, publish, or tag until the owner completes the final publication audit.

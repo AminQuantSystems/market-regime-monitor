@@ -1,6 +1,6 @@
 # Interface concept
 
-**Status:** design specified. The branded board, row selection, detail panel, CSV upload controls, and Return to Demo are implemented as described in `PROJECT_STATE.md`. Visual tokens are in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`.
+**Status:** design specified and implemented. The branded board, row selection, detail panel, CSV upload controls, and Return to Demo are the V1 release candidate described in `PROJECT_STATE.md`. Visual tokens are in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`. Trend Score is kept in the API and is not shown in the detail panel.
 
 ## Intent
 
@@ -171,7 +171,7 @@ V1 does not add RSI, MACD, stochastic, Bollinger overlays, a candlestick wall, o
 
 Desktop first, from 1366 px. On a wide screen the board and the detail panel may sit together. The analytical working width is about 1400–1600 px. Extra width may hold the detail panel. Rows are not stretched into empty cells on an ultrawide monitor.
 
-On a narrow screen all six finance columns remain. A dimension is not hidden to fit. The board may scroll horizontally inside its own container. The page does not scroll horizontally. A sticky MARKET column may be used later. It is not implemented in this phase.
+On a narrow screen all six finance columns remain. A dimension is not hidden to fit. The board may scroll horizontally inside its own container. The page does not scroll horizontally. A sticky MARKET column may be used later. It is not part of V1.
 
 ## Acceptance
 

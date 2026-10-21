@@ -1,7 +1,7 @@
 # MEEM Toolkit Design System
 
 **Version:** 1.0
-**Status:** specified. Not implemented.
+**Status:** specified and applied in Market Regime Monitor. Theme switching is not part of V1.
 **Tokens:** `MEEM_DESIGN_TOKENS.json`
 **Scope:** every MEEM finance and investment-technology product. Market Regime Monitor is the first product to use this version. The tokens are framework-neutral. They contain no finance formulas.
 

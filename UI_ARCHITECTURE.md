@@ -1,12 +1,12 @@
 # UI architecture
 
-**Status:** approved architecture. Not implemented.
-**Phase:** 2B
-**Finance core:** `src/market_state/` remains the authority and stays frozen for V1 UI work.
+**Status:** implemented. The React, TypeScript, and Vite application and the FastAPI adapter follow this architecture.
+**Phase:** 2B design. The application was built in later phases and hardened for the V1 release candidate.
+**Finance core:** `src/market_state/` remains the authority. Formulas stay frozen.
 **Visual system:** `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`.
 **Screen specification:** `UI_CONCEPT.md`.
 
-This document chooses the V1 application shape. It does not add dependencies, routes, or a screen.
+This document records the V1 application shape. Sentences below that describe a repository with no frontend are the Phase 2B starting point and are kept as the design record.
 
 ## Technology
 

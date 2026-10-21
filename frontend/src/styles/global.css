@@ -1,0 +1,28 @@
+@import "../design-system/tokens.generated.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--meem-dark-canvas);
+  color: var(--meem-dark-text-primary);
+  font-family: Montserrat, Inter, "Segoe UI", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

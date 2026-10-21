@@ -1,0 +1,83 @@
+.wrap {
+  margin-top: 12px;
+  overflow-x: auto;
+  background: var(--meem-dark-surface-1);
+  border: 1px solid var(--meem-dark-border-subtle);
+  border-radius: 2px;
+}
+
+.table {
+  width: 100%;
+  min-width: 880px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.table th,
+.table td {
+  height: 52px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--meem-dark-border-subtle);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table thead th {
+  height: 32px;
+  color: var(--meem-dark-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.market {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ticker {
+  display: block;
+  margin-top: 2px;
+  color: var(--meem-dark-text-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.positive { color: var(--meem-semantic-positive-dark); }
+.negative { color: var(--meem-semantic-negative-dark); }
+.attention { color: var(--meem-semantic-attention-dark); }
+.neutral { color: var(--meem-semantic-neutral-dark); }
+.information { color: var(--meem-semantic-information-dark); }
+.unavailable { color: var(--meem-semantic-unavailable-dark); }
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.label[data-emphasis="strong"] {
+  font-weight: 700;
+}
+
+.label[data-emphasis="strong"]::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 2px;
+  margin-right: 8px;
+  background: currentColor;
+  vertical-align: middle;
+}

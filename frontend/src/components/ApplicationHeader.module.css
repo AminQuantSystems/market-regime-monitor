@@ -1,0 +1,52 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-end;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--meem-dark-accent-accessible);
+}
+
+.product {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.demo {
+  margin: 4px 0 0;
+  color: var(--meem-semantic-information-dark);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.note {
+  margin: 4px 0 0;
+  color: var(--meem-dark-text-muted);
+  font-size: 11px;
+}
+
+.context {
+  display: flex;
+  gap: 24px;
+  margin: 0;
+}
+
+.fact {
+  margin: 0;
+}
+
+.fact dt {
+  color: var(--meem-dark-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.fact dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+}

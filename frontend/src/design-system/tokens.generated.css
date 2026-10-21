@@ -1,0 +1,40 @@
+/* DO NOT EDIT — GENERATED FROM MEEM_DESIGN_TOKENS.json */
+:root {
+  --meem-brand-deep-sapphire: #052689;
+  --meem-brand-jet-black: #0D0D0D;
+  --meem-brand-white: #FFFFFF;
+  --meem-brand-charcoal: #6E6E6E;
+  --meem-dark-canvas: #0D0D0D;
+  --meem-dark-surface-1: #111621;
+  --meem-dark-surface-2: #161D2B;
+  --meem-dark-surface-3: #1B2536;
+  --meem-dark-border-subtle: #28354C;
+  --meem-dark-border-interactive: #5B6E93;
+  --meem-dark-text-primary: #F7F9FC;
+  --meem-dark-text-secondary: #B9C1D0;
+  --meem-dark-text-muted: #7F899B;
+  --meem-dark-accent-accessible: #6D8CFF;
+  --meem-light-canvas: #F7F8FC;
+  --meem-light-surface-1: #FFFFFF;
+  --meem-light-surface-2: #F0F3F8;
+  --meem-light-border-subtle: #D8DEE9;
+  --meem-light-border-interactive: #7A8799;
+  --meem-light-text-primary: #0D0D0D;
+  --meem-light-text-secondary: #4D5564;
+  --meem-light-text-muted: #6E6E6E;
+  --meem-light-accent: #052689;
+  --meem-semantic-positive-dark: #2EA579;
+  --meem-semantic-positive-light: #1F6F55;
+  --meem-semantic-negative-dark: #DE6672;
+  --meem-semantic-negative-light: #A73A48;
+  --meem-semantic-attention-dark: #D49A2A;
+  --meem-semantic-attention-light: #8A5C00;
+  --meem-semantic-neutral-dark: #8B95A5;
+  --meem-semantic-neutral-light: #4D5564;
+  --meem-semantic-information-dark: #6D8CFF;
+  --meem-semantic-information-light: #2446A8;
+  --meem-semantic-unavailable-dark: #7F899B;
+  --meem-semantic-unavailable-light: #5D6572;
+  --meem-semantic-error-dark: #E36A75;
+  --meem-semantic-error-light: #B42318;
+}

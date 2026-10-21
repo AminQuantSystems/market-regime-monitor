@@ -1,0 +1,13 @@
+.shell {
+  width: min(1520px, 100%);
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.status {
+  margin: 16px 0 0;
+  color: var(--meem-dark-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}

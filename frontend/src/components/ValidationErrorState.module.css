@@ -1,0 +1,27 @@
+.panel {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--meem-dark-surface-1);
+  border: 1px solid var(--meem-semantic-error-dark);
+  border-radius: 2px;
+}
+
+.title {
+  margin: 0;
+  color: var(--meem-semantic-error-dark);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.code {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.message {
+  margin: 8px 0 0;
+  color: var(--meem-dark-text-secondary);
+  font-size: 13px;
+}

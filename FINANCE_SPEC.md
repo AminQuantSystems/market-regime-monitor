@@ -193,14 +193,20 @@ This is the root-mean-square size of the daily log moves. Subtracting the sample
 
 ### Regime
 
-Calculate today's RV21. Compare it with the previous 252 RV21 observations for the same market. Today's value is not a member of that reference distribution.
+The Cboe reference applies only to the RV21 measurement above. The historical percentile is a Market State Flight Deck design. Cboe does not specify this regime, and the 25/75/90 bands are not a Cboe standard or a universal institutional standard.
+
+The percentile answers where today's realised volatility sits relative to this market's previous 252 realised-volatility observations. It is a descriptive historical rank. It is not the probability that volatility will rise or fall, not a confidence level, not a p-value, not a tail probability, not a forecast, and not a claim of statistical significance. Consecutive 21-observation RV21 values overlap and are serially dependent, so the rank is not treated as a sample of independent draws.
+
+Calculate today's RV21. Compare it with the previous 252 RV21 observations for the same market. Today's value is not a member of that reference distribution. The earlier rule `100 * count(previous_rv21 <= current_rv21) / 252` is withdrawn. Under that rule, a value identical to its entire history scored 100 and was classified High. A relative historical-state classifier does not treat an observation identical to every reference value as an extreme upper-tail observation.
 
 ```text
-k = count(previous_rv21 <= current_rv21)
-percentile = 100 * k / 252
+L = count(previous_rv21 < current_rv21)
+E = count(previous_rv21 == current_rv21)
+N = 252
+historical_percentile = 100 * (L + 0.5 * E) / N
 ```
 
-`k` is an integer from 0 through 252. A previous value exactly equal to today's RV21 counts toward `k`. The comparison is `<=`. It is not a strict less-than, not an average rank, not an interpolated percentile, and not an external statistics routine.
+Values strictly below today's RV21 receive full weight. Values exactly equal to it receive half weight. Values strictly above it receive zero weight. Ties therefore sit at the middle of their tied block, which is the average-rank treatment used in standard non-parametric ranking, including NIST ranking guidance for tied observations. Comparisons are exact. There is no tolerance, no epsilon, no interpolation, and no external statistics routine.
 
 | Regime | Rule | Reason code |
 |---|---|---|
@@ -209,14 +215,13 @@ percentile = 100 * k / 252
 | Elevated | 75 < percentile <= 90 | `VOLATILITY_ELEVATED` |
 | High | percentile > 90 | `VOLATILITY_HIGH` |
 
-The four bands partition every real percentile. Exact 25 is Low. Exact 75 is Normal. Exact 90 would be Elevated.
+The four bands partition every real number, so every attainable percentile belongs to exactly one regime. Exact 25 is Low. Exact 75 is Normal. Exact 90 would be Elevated.
 
-Attainable values are `100 * k / 252`. This hits 25 at `k = 63` and 75 at `k = 189`. It never hits 90, because `0.90 * 252 = 226.8` is not an integer.
+`L + 0.5 * E` is a multiple of one half, from 0 through 252. Exact 90 would require that quantity to be `0.90 * 252 = 226.8`, which is not a multiple of one half, so the formula cannot produce 90. With no ties, `L = 63` is exactly 25 and Low, and `L = 189` is exactly 75 and Normal. `L = 226` is `89.6825396...` and Elevated. `L = 227` is `90.0793650...` and High.
 
-- `k = 226` gives `22600 / 252 = 89.6825396...`, which is Elevated
-- `k = 227` gives `22700 / 252 = 90.0793650...`, which is High
+If today's RV21 is 0 and all 252 previous values are 0, then `L = 0` and `E = 252`. The percentile is `100 * (0 + 0.5 * 252) / 252 = 50`, and the regime is Normal. That path is not High.
 
-Realised-volatility levels differ across markets, so an absolute number does not have one meaning for every asset. Ranking today's RV21 against that market's own trailing history makes the regime asset-relative. The count does not assume a normal distribution, and it can be explained in a few seconds. The percentile is not a forecast.
+Realised-volatility levels differ across markets, so an absolute number does not have one meaning for every asset. Ranking today's RV21 against that market's own trailing history makes the regime asset-relative. The rank does not assume a normal distribution, and it can be explained in a few seconds.
 
 ### History arithmetic
 
@@ -251,7 +256,7 @@ Volatility supports an exact `as_of_date`. For requested date `t`:
 These names are the approved shape. They are not implemented.
 
 1. `calculate_rv21` takes 22 adjusted closes in observation order, oldest first, and returns the decimal RV21.
-2. `classify_volatility(current_rv21, historical_rv21_values)` requires exactly 252 prior values. It returns `k`, the percentile, the regime, and the reason code.
+2. `classify_volatility(current_rv21, historical_rv21_values)` requires exactly 252 prior values. It returns `below_count`, `equal_count`, `reference_size`, the percentile, the regime, and the reason code.
 3. `calculate_volatility(prices, market_id, as_of_date)` selects one market, applies the as-of rule, and returns a frozen `VolatilityResult`.
 
 `VolatilityResult` fields:
@@ -260,12 +265,20 @@ These names are the approved shape. They are not implemented.
 - `as_of_date`
 - `adjusted_close`
 - `realized_volatility_21`
-- `reference_count`, the integer `k`
+- `historical_below_count`, which is `L`
+- `historical_equal_count`, which is `E`
+- `historical_reference_size`, which is 252 in V1
 - `historical_percentile`
 - `volatility_regime`
 - `reason_code`
 
-`reference_count` is included because the bands are defined on `100 * k / 252` and 90 is not attainable. It is the count that makes the percentile auditable. It is not a score and it is not a forecast. No confidence, signal strength, predicted volatility, or position size is included.
+The stored counts make the percentile auditable:
+
+```text
+historical_percentile = 100 * (historical_below_count + 0.5 * historical_equal_count) / historical_reference_size
+```
+
+There is no `reference_count` field. That name belonged to the withdrawn `<=` count. No confidence, signal strength, predicted volatility, or position size is included.
 
 A non-finite or negative volatility input is `DATA_INVALID_PRICE`. Fewer than 22 prices for RV21, or fewer than 274 prices through the as-of date for the regime, is `DATA_INSUFFICIENT_HISTORY`.
 

@@ -41,7 +41,7 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Validation: implemented
 - Trend: implemented
 - Momentum: implemented
-- Volatility: design approved — not implemented
+- Volatility: design approved — not implemented. The regime percentile is the midrank `100 * (L + 0.5 * E) / 252`. A history in which every RV21 equals today's value is percentile 50 and Normal. The `<=` count is not the rule.
 - Relative Strength: not implemented
 - Directional market state: not implemented
 - What Changed: not implemented

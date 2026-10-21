@@ -265,13 +265,14 @@ A Momentum calculation with 64 observations is accepted. 63 observations fail wi
 
 ## 9. Volatility design cases
 
-These cases are the approved Volatility design. They are not implemented and they have no Python tests. RV21 is the zero-mean root-mean-square of 21 log returns, annualised with 252. The percentile uses the previous 252 RV21 values and the comparison `<=`. Today's RV21 is not in that set.
+These cases are the approved Volatility design. They are not implemented and they have no Python tests. RV21 is the zero-mean root-mean-square of 21 log returns, annualised with 252. The percentile is a midrank of the previous 252 RV21 values. Today's RV21 is not in that set. The comparison `previous <= current` is not the percentile rule.
 
 ```text
 r_i = ln(price_i / price_(i-1))
 RV21 = sqrt( (252 / 21) * sum(r_i^2) ) = sqrt( 252 * mean(r_i^2) )
-percentile = 100 * k / 252
-k = count(previous_rv21 <= current_rv21)
+L = count(previous_rv21 < current_rv21)
+E = count(previous_rv21 == current_rv21)
+percentile = 100 * (L + 0.5 * E) / 252
 ```
 
 ### 9a. Constant prices
@@ -304,38 +305,47 @@ The 21 log returns alternate `+0.01, -0.01`, starting at `+0.01`. Because 21 is 
 
 274 prices are sufficient for today's RV21 plus the previous 252 RV21 values. The earliest reference value, at `t-252`, uses the price at `t-273`. 273 prices do not contain that price, so the complete regime is unavailable.
 
-### 9f. Attainable percentile boundaries
+### 9f. Percentile boundaries
 
-| k | Percentile | Expected regime | Reason code |
-|---:|---|---|---|
-| 63 | 25 exactly | Low | `VOLATILITY_LOW` |
-| 64 | `6400 / 252 = 25.3968253...` | Normal | `VOLATILITY_NORMAL` |
-| 189 | 75 exactly | Normal | `VOLATILITY_NORMAL` |
-| 190 | `19000 / 252 = 75.3968253...` | Elevated | `VOLATILITY_ELEVATED` |
-| 226 | `22600 / 252 = 89.6825396...` | Elevated | `VOLATILITY_ELEVATED` |
-| 227 | `22700 / 252 = 90.0793650...` | High | `VOLATILITY_HIGH` |
+No-tie cases have `E = 0`, so the percentile is `100 * L / 252`.
 
-No integer `k` produces percentile 90. A literal 90 would be Elevated. The first attainable value above 90 is `k = 227`, and that is High.
+| Case | L | E | Effective count | Percentile | Regime | Reason code |
+|---|---:|---:|---:|---|---|---|
+| A | 63 | 0 | 63 | 25 exactly | Low | `VOLATILITY_LOW` |
+| B | 64 | 0 | 64 | `6400 / 252 = 25.3968253...` | Normal | `VOLATILITY_NORMAL` |
+| C | 189 | 0 | 189 | 75 exactly | Normal | `VOLATILITY_NORMAL` |
+| D | 190 | 0 | 190 | `19000 / 252 = 75.3968253...` | Elevated | `VOLATILITY_ELEVATED` |
+| E | 226 | 0 | 226 | `22600 / 252 = 89.6825396...` | Elevated | `VOLATILITY_ELEVATED` |
+| F | 227 | 0 | 227 | `22700 / 252 = 90.0793650...` | High | `VOLATILITY_HIGH` |
+| G | 0 | 252 | 126 | 50 exactly | Normal | `VOLATILITY_NORMAL` |
+| H | 62 | 2 | 63 | 25 exactly | Low | `VOLATILITY_LOW` |
+| I | 188 | 2 | 189 | 75 exactly | Normal | `VOLATILITY_NORMAL` |
+| J | 252 | 0 | 252 | 100 exactly | High | `VOLATILITY_HIGH` |
+| K | 0 | 0 | 0 | 0 exactly | Low | `VOLATILITY_LOW` |
 
-### 9g. Ties use `<=`
+Case G is the constant series: today's RV21 is 0 and all 252 previous values are 0. Half weight on every tied value gives percentile 50 and Normal. It is not High.
 
-On a constant price, today's RV21 is 0 and all 252 previous RV21 values are 0. Every previous value satisfies `<=`, so `k = 252` and the percentile is 100. The regime is High, `VOLATILITY_HIGH`. A strict less-than would have counted `k = 0` and called the same path Low. The approved rule is `<=`.
+Case H reaches the Low boundary through ties: `62 + 0.5 * 2 = 63`. Case I reaches the Normal boundary through ties: `188 + 0.5 * 2 = 189`.
 
-A mixed tie has the same rule. If 100 previous values are below today's RV21, 10 are exactly equal to it, and 142 are above it, then `k = 110`. The 10 equal values are inside the count.
+Case J is a current value strictly above every historical value. Case K is a current value strictly below every historical value. Today's value is not added to the 252.
 
-### 9h. Today's value is excluded
+`L + 0.5 * E` cannot equal 226.8, so the formula cannot produce percentile 90. A literal 90 would be Elevated. Case F is the first listed no-tie value above 90, and it is High.
 
-The reference length stays 252. If all 252 previous values are 0.10 and today's RV21 is 0.50, then `k = 252` and the percentile is 100. Today's 0.50 is not added to the reference set.
+Every real percentile falls in exactly one band: at or below 25, above 25 through 75, above 75 through 90, or above 90.
 
-### 9i. As-of, isolation, and caller contract
+### 9g. Today's value is excluded
+
+The reference length stays 252. If all 252 previous values are 0.10 and today's RV21 is 0.50, then `L = 252`, `E = 0`, and the percentile is 100. Today's 0.50 is not added to the reference set. That is case J.
+
+### 9h. As-of, isolation, and caller contract
 
 An exact as-of date is required. A later block of extreme adjusted closes does not change the RV21, the percentile, the regime, or the reason code at the original date. Another market's prices in the same frame do not change the requested market. The same history, market, and as-of date return the same result. The caller's frame is not mutated.
 
-### 9j. 274 current state, 275 What Changed
+### 9i. 274 current state, 275 What Changed
 
 At 274 prices the current full state can be calculated, and the previous full state cannot. `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. The text is not `No market-state change since previous session`.
 
-At 275 prices both states can be calculated. A constant `adjusted_close` of 100 across those 275 dates keeps every category unchanged, including Volatility High, so that sentence is allowed only in that complete comparison.
+At 275 prices both states can be calculated. A constant `adjusted_close` of 100 across those 275 dates keeps every category unchanged, including Volatility Normal, so that sentence is allowed only in that complete comparison.
 
 ## 10. Relative-strength boundaries
 
@@ -413,7 +423,7 @@ Every required series is a constant `adjusted_close` of 100 across all 275 dates
 
 Expected once What Changed and Volatility exist: both states are calculated, every categorical label is unchanged, and the comparison text is exactly `No market-state change since previous session`.
 
-On this constant panel the labels on both dates are Trend score 0, Momentum Mixed, Volatility High, Relative Strength Neutral, and directional state Neutral. Volatility is High because every RV21 is 0, `k = 252`, and the percentile is 100.
+On this constant panel the labels on both dates are Trend score 0, Momentum Mixed, Volatility Normal, Relative Strength Neutral, and directional state Neutral. Volatility is Normal because every RV21 is 0, `L = 0`, `E = 252`, and the percentile is 50.
 
 ## 17. Running validator: 272 observations rejected
 

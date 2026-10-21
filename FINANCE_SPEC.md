@@ -1,7 +1,7 @@
 # Finance specification — approved V1 model
 
 **Status:** owner-approved V1 finance rules.
-Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D implements realised volatility. Phase 1F implements Benchmark Relative Performance, including the boundary classification tolerance. The four-dimensional Market Regime Snapshot is designed and is not implemented. What Changed is specified and is not implemented. There is no composite directional regime.
+Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D implements realised volatility. Phase 1F implements Benchmark Relative Performance, including the boundary classification tolerance. Phase 1G implements the Market Regime Snapshot as orchestration only. What Changed is specified and is not implemented. There is no composite directional regime.
 
 These rules replace the provisional Phase 0 proposal. Comparisons are exact. The financial definition uses no tolerance and no epsilon.
 
@@ -483,18 +483,24 @@ The four states together are the descriptive regime signature, for example Stron
 
 ### Market Regime Snapshot
 
-Design only. Not implemented.
+Implemented in Phase 1G. `MarketRegimeSnapshot` is an orchestration and audit object, not a fifth model. `calculate_market_regime_snapshot` calls `calculate_trend`, `calculate_momentum`, `calculate_volatility`, and `calculate_relative_performance` once each. All four receive the same prices, the same market, and the same exact as-of date. Relative performance also receives `benchmark_id`. The ACWI check stays inside that instrument.
 
-`MarketRegimeSnapshot` assembles results that Trend, Momentum, Volatility, and Benchmark Relative Performance have already calculated. It performs no finance calculation of its own and it does not duplicate their formulas. The proposed fields are:
+The snapshot stores:
 
 - `market_id`
 - `as_of_date`
-- the Trend result, which is also the Direction reading
-- the Momentum result
-- the Volatility result
-- the Benchmark Relative Performance result
+- `trend`, a `TrendResult`
+- `momentum`, a `MomentumResult`
+- `volatility`, a `VolatilityResult`
+- `relative_performance`, a `RelativePerformanceResult`
 
-The underlying immutable result objects are retained so the measurements and reason codes stay auditable. The snapshot has no composite score, confidence, probability, AI regime, buy or sell instruction, recommendation, expected return, or position size.
+It does not flatten those results and it does not copy their formulas. Direction is `trend.trend_state`. There is no second direction calculation. If a component raises `MarketDataError`, that same error propagates and no snapshot is returned. The function does not call `validate_market_data` and it does not restate a second history minimum. The binding length is the volatility regime, so a complete snapshot needs 274 aligned observations. 273 observations fail with `DATA_INSUFFICIENT_HISTORY`.
+
+A snapshot is one market at one as-of date. It does not contain the previous session. What Changed, when it exists, will compare two snapshots in a separate module.
+
+Every stored value comes from one of the four result objects. That makes the assembly traceable to the instrument that calculated it. This is not independent regulatory validation. The project uses staged adversarial review and regression testing. It has not undergone independent bank model validation or regulatory approval.
+
+The snapshot has no composite score, confidence, probability, AI regime, buy or sell instruction, recommendation, expected return, or position size.
 
 ## What changed
 

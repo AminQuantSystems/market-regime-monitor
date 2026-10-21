@@ -56,6 +56,15 @@ Each row shows:
 
 The row must not say buy, sell, overweight, or underweight. Nothing required for the two-second reading may depend on a tooltip.
 
+The future row reads a `MarketRegimeSnapshot` and does not reformat the approved state labels:
+
+- MARKET comes from `market_id`, later shown as the configured display name
+- DIRECTION comes from `trend.trend_state`
+- MOMENTUM comes from `momentum.momentum_state`
+- VOL comes from `volatility.volatility_regime`
+- RELATIVE comes from `relative_performance.relative_performance_state`
+- CHANGE is not available yet. What Changed will compare two snapshots in its own phase.
+
 ## What changed
 
 What Changed is not implemented. When it exists, a transition is a change in Direction, Momentum, Volatility, or Relative Performance. There is no composite-regime transition. If none of the four dimensions changed, and both complete states were calculated from at least 275 observations, the panel may say `No market-state change since previous session`.

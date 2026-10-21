@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 1F — Benchmark Relative Performance implemented and numerically hardened. Market Regime Snapshot design approved; not implemented.
+Phase 1G — Market Regime Snapshot orchestration implemented.
 
 ## What exists
 
@@ -18,7 +18,8 @@ Phase 1F — Benchmark Relative Performance implemented and numerically hardened
 - The Momentum instrument in `src/market_state/momentum.py`
 - The realised-volatility instrument in `src/market_state/volatility.py`
 - The Benchmark Relative Performance instrument in `src/market_state/relative_performance.py`
-- Pytest coverage for validation, Trend, Momentum, Volatility, and Benchmark Relative Performance
+- The Market Regime Snapshot orchestrator in `src/market_state/regime.py`
+- Pytest coverage for validation, Trend, Momentum, Volatility, Benchmark Relative Performance, and snapshot orchestration
 - This file, plus the interface concept and the read-only Windows/Mac plan
 
 ## History rule
@@ -45,14 +46,14 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Momentum: implemented
 - Volatility: implemented. RV21 uses 21 zero-mean log returns and annualises with 252. The regime percentile is `100 * (L + 0.5 * E) / 252`, a Market Regime Monitor half-weight tie convention. A history in which every RV21 equals today's value is percentile 50 and Normal.
 - Benchmark Relative Performance: implemented and numerically hardened. The measure is the 63-observation active return against ACWI, the common V1 comparison benchmark. Classification treats a value within `1e-12` of +0.05, +0.02, -0.02, or -0.05 as that threshold. The stored active return stays at full precision. ACWI is not the mandate-specific benchmark for every regional market.
-- Market Regime Snapshot: DESIGN APPROVED — NOT IMPLEMENTED. It will assemble the four instrument results and will not calculate them. No composite directional regime exists.
+- Market Regime Snapshot: implemented. It assembles `TrendResult`, `MomentumResult`, `VolatilityResult`, and `RelativePerformanceResult` for one market and one as-of date. It adds no finance methodology. Direction is `trend.trend_state`. No composite directional regime exists. This assembly is not independent bank model validation or regulatory approval.
 - What Changed: not implemented
 - UI: not implemented
 - Live or vendor market data: not implemented
 - Backtesting: not implemented
 - Mac integration: not authorised
 - GitHub publication: none
-- Full current-state validation minimum: 274
+- Full current-state and snapshot minimum: 274
 - Planned complete What Changed minimum: 275
 
 ## Data and operations
@@ -63,6 +64,10 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Nothing has been published. There is no GitHub remote.
 - Portfolio Risk X-Ray was not modified.
 
+## Local orchestration timing
+
+One local measurement on 21 October 2026, Python 3.14, this Windows machine: assembling snapshots for SPY, QQQ, IWM, EWU, EWG, EWJ, and EEM from one synthetic 274-observation panel took 0.22 seconds. The panel also contained ACWI. This is diagnostic evidence only. It is not a pass/fail limit, and it does not authorise a Mac worker or parallel execution.
+
 ## Next approved action
 
-Stop after this design. Do not implement the Market Regime Snapshot, What Changed, or UI until that work is authorised.
+Stop after Phase 1G. Do not implement What Changed or UI until that work is authorised.

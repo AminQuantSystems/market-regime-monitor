@@ -493,6 +493,29 @@ These four readings are valid together and are not collapsed:
 
 The regime signature is the tuple of the four states, for example Strong Up / Accelerating / Elevated / Outperform. There is no fifth score.
 
+## 12. Market regime snapshot
+
+274 aligned dates. SPY has 273 closes at 128 and a final close of 144. ACWI has 273 closes at 128 and a final close of 160. The as-of date is the final date.
+
+Hand checks, before any production call:
+
+- SMA50 = (49 × 128 + 144) / 50 = 128.32. SMA200 = (199 × 128 + 144) / 200 = 128.08. The final close 144 is above both, and SMA50 is above SMA200. Trend is Strong Up, `TREND_STRONG_UP_ALIGNMENT`.
+- The 21-observation and 63-observation price ratios are both 144/128 = 1.125. Both returns are +0.125. The same positive ratio divided by 21 is a faster pace than the same ratio divided by 63. Momentum is Accelerating, `MOMENTUM_ACCELERATING`.
+- Every historical RV21 window ends before the final close, so it sits on the flat 128 closes and its RV21 is 0. The current window contains the single jump, so its RV21 is positive. L = 252, E = 0, percentile = 100. Volatility is High, `VOLATILITY_HIGH`.
+- Asset return 0.125 minus ACWI return 0.25 is active return −0.125. Benchmark Relative Performance is Strong Underperform, `RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM`.
+
+The snapshot keeps those four results. It does not replace the disagreement between Strong Up and Strong Underperform.
+
+### 12b. Strong Up with deteriorating momentum
+
+The same 274 dates. ACWI is 100 on every date. SPY is 100 except the close 63 observations before the end, which is 400, the close 21 observations before the end, which is 300, and the final close, which is 200.
+
+- SMA50 = (48 × 100 + 300 + 200) / 50 = 106. SMA200 = (197 × 100 + 400 + 300 + 200) / 200 = 103. Final close 200 > 106 > 103. Trend is Strong Up, `TREND_STRONG_UP_ALIGNMENT`.
+- R21 = 200/300 − 1 < 0. R63 = 200/400 − 1 = −0.5. (2/3)³ = 8/27 < 1/2, so the recent pace is more negative than the 63-observation pace. Momentum is Deteriorating, `MOMENTUM_DETERIORATING`.
+- Active return = −0.5. Benchmark Relative Performance is Strong Underperform, `RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM`.
+
+The snapshot retains Strong Up and Deteriorating together. Volatility stays the volatility instrument's own result.
+
 ## 16. Validator: 274 observations accepted
 
 Every required series has the same 274 dates and a finite positive `adjusted_close` on each. `evaluation_date` equals the last date.

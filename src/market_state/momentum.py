@@ -77,7 +77,7 @@ def calculate_momentum(prices: pd.DataFrame, market_id: str, as_of_date: str) ->
     """Calculate Momentum for ``market_id`` at ``as_of_date``.
 
     The caller supplies one market's adjusted-close history, or a wider frame
-    from which this market is selected. Raw panel rules such as the 273-observation
+    from which this market is selected. Raw panel rules such as the 274-observation
     minimum, the shared date index, and staleness stay with market-data validation.
 
     This function uses only rows for ``market_id`` on or before ``as_of_date``.

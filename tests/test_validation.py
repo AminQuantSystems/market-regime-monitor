@@ -19,7 +19,7 @@ def configuration() -> pd.DataFrame:
     )
 
 
-def prices(observations: int = 273, end: str = "2026-03-01", close: float = 100.0) -> pd.DataFrame:
+def prices(observations: int = 274, end: str = "2026-03-01", close: float = 100.0) -> pd.DataFrame:
     dates = pd.date_range(end=end, periods=observations, freq="D").strftime("%Y-%m-%d")
     return pd.DataFrame(
         {
@@ -43,7 +43,7 @@ def test_golden_dataset_is_accepted_and_canonical():
     assert validated["date"].dtype == "string"
     assert validated["market_id"].dtype == "string"
     assert validated["adjusted_close"].dtype == "float64"
-    assert len(validated) == 273 * len(MARKETS)
+    assert len(validated) == 274 * len(MARKETS)
     assert validated["date"].is_monotonic_increasing
     ordered = validated.sort_values(["date", "market_id"], kind="mergesort").reset_index(drop=True)
     pd.testing.assert_frame_equal(validated, ordered)
@@ -149,10 +149,17 @@ def test_bad_adjusted_close_is_rejected(value, code):
     assert error.value.code == code
 
 
-def test_273_observations_are_accepted():
-    validated = validate_market_data(prices(273), configuration(), "2026-03-01")
+def test_274_observations_are_accepted():
+    validated = validate_market_data(prices(274), configuration(), "2026-03-01")
 
-    assert validated["date"].nunique() == 273
+    assert validated["date"].nunique() == 274
+
+
+def test_273_observations_are_rejected():
+    with pytest.raises(MarketDataError) as error:
+        validate_market_data(prices(273), configuration(), "2026-03-01")
+
+    assert error.value.code == "DATA_INSUFFICIENT_HISTORY"
 
 
 def test_272_observations_are_rejected():
@@ -202,7 +209,7 @@ def test_disabled_configured_market_may_have_a_different_date():
     validated = validate_market_data(frame, config, "2026-03-01")
 
     assert "GLD" in set(validated["market_id"])
-    assert validated["date"].nunique() == 274 or "1999-01-01" in set(validated["date"])
+    assert validated["date"].nunique() == 275 or "1999-01-01" in set(validated["date"])
 
 
 def test_duplicate_config_market_is_rejected():
@@ -309,11 +316,11 @@ def test_numpy_boolean_scalars_are_accepted():
 
 def test_same_row_count_with_different_dates_is_rejected():
     frame = prices()
-    assert (frame.groupby("market_id").size() == 273).all()
+    assert (frame.groupby("market_id").size() == 274).all()
     first = sorted(frame["date"].unique())[0]
     shifted = (frame["market_id"] == "QQQ") & (frame["date"] == first)
     frame.loc[shifted, "date"] = "1999-12-31"
-    assert (frame.groupby("market_id").size() == 273).all()
+    assert (frame.groupby("market_id").size() == 274).all()
 
     with pytest.raises(MarketDataError) as error:
         validate_market_data(frame, configuration(), "2026-03-01")
@@ -431,7 +438,7 @@ def test_object_dtype_python_bools_are_accepted():
 
     validated = validate_market_data(prices(), config, "2026-03-01")
 
-    assert len(validated) == 273 * len(MARKETS)
+    assert len(validated) == 274 * len(MARKETS)
 
 
 def test_failed_validation_does_not_mutate_caller_frames():

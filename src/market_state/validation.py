@@ -20,7 +20,7 @@ PRICE_COLUMNS = ("date", "market_id", "adjusted_close")
 CONFIG_COLUMNS = ("market_id", "display_name", "benchmark_id", "enabled")
 REQUIRED_BOARD_MARKETS = ("SPY", "QQQ", "IWM", "EWU", "EWG", "EWJ", "EEM")
 REQUIRED_BENCHMARK = "ACWI"
-MINIMUM_OBSERVATIONS = 273
+MINIMUM_OBSERVATIONS = 274
 MAXIMUM_AGE_DAYS = 5
 _DATE_TEXT = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 

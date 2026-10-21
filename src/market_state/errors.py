@@ -18,7 +18,8 @@ class MarketDataError(MarketStateError):
 
 
 class MarketRegimeError(MarketStateError):
-    """A calculated component result contradicts the snapshot request.
+    """An orchestration result contradicts the request.
 
-    This is an orchestration integrity failure. It is not bad market data.
+    This covers a component identity that disagrees with the snapshot request,
+    and a pair of snapshots that cannot be compared. It is not bad market data.
     """

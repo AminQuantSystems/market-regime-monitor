@@ -1,11 +1,16 @@
 """Market Regime Monitor.
 
-Phase 1G assembles a Market Regime Snapshot from Trend, Momentum, realised
-volatility, and Benchmark Relative Performance. The snapshot adds no finance
-of its own. There is no composite directional regime. What Changed is not
-included.
+Phase 1I compares categorical What Changed transitions between two snapshots.
+The comparison adds no finance of its own. There is no composite directional
+regime. The interface is not included.
 """
 
+from market_state.change import (
+    ComponentStateTransition,
+    MarketRegimeChange,
+    calculate_market_regime_change,
+    compare_market_regime_snapshots,
+)
 from market_state.errors import MarketDataError, MarketRegimeError, MarketStateError
 from market_state.momentum import MomentumResult, calculate_momentum, classify_momentum
 from market_state.regime import MarketRegimeSnapshot, calculate_market_regime_snapshot
@@ -25,7 +30,9 @@ from market_state.volatility import (
 )
 
 __all__ = [
+    "ComponentStateTransition",
     "MarketDataError",
+    "MarketRegimeChange",
     "MarketRegimeError",
     "MarketRegimeSnapshot",
     "MarketStateError",
@@ -34,7 +41,9 @@ __all__ = [
     "TrendResult",
     "VolatilityClassification",
     "VolatilityResult",
+    "calculate_market_regime_change",
     "calculate_market_regime_snapshot",
+    "compare_market_regime_snapshots",
     "calculate_momentum",
     "calculate_relative_performance",
     "calculate_rv21",

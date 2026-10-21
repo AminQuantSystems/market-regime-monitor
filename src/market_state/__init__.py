@@ -1,8 +1,8 @@
 """Market Regime Monitor.
 
 Phase 1F calculates Trend, short/medium-horizon Momentum, realised volatility,
-and Benchmark Relative Performance, and validates local prices. Directional
-state is not included.
+and Benchmark Relative Performance, and validates local prices. There is no
+composite directional regime. The Market Regime Snapshot is not included.
 """
 
 from market_state.errors import MarketDataError

@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 1F — Benchmark Relative Performance instrument implemented.
+Phase 1F — Benchmark Relative Performance implemented and numerically hardened. Market Regime Snapshot design approved; not implemented.
 
 ## What exists
 
@@ -25,7 +25,7 @@ Phase 1F — Benchmark Relative Performance instrument implemented.
 
 The validator accepts 274 observations and rejects 273 and 272 with `DATA_INSUFFICIENT_HISTORY`.
 
-274 observations are the full current-state minimum. The earliest reference RV21, at `t-252`, needs the price at `t-273`. The planned complete What Changed minimum is 275. At 274 the current full state can be available and the previous full state cannot, so `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. `No market-state change since previous session` is allowed only when at least 275 observations exist, both states were calculated, and none of the five categorical states changed.
+274 observations are the full current-state minimum. The earliest reference RV21, at `t-252`, needs the price at `t-273`. The planned complete What Changed minimum is 275. At 274 the current full state can be available and the previous full state cannot, so `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. `No market-state change since previous session` is allowed only when at least 275 observations exist, both states were calculated, and none of the four dimensions changed: Direction / Trend, Momentum, Volatility, and Benchmark Relative Performance.
 
 An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed itself is not implemented. The local project folder has not been renamed.
 
@@ -44,8 +44,8 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Trend: implemented
 - Momentum: implemented
 - Volatility: implemented. RV21 uses 21 zero-mean log returns and annualises with 252. The regime percentile is `100 * (L + 0.5 * E) / 252`, a Market Regime Monitor half-weight tie convention. A history in which every RV21 equals today's value is percentile 50 and Normal.
-- Benchmark Relative Performance: implemented. The measure is the 63-observation active return against ACWI, the common V1 comparison benchmark. ACWI is not treated as the mandate-specific benchmark for every regional market. The labels are Strong Outperform, Outperform, Neutral, Underperform, and Strong Underperform.
-- Directional market state: not implemented
+- Benchmark Relative Performance: implemented and numerically hardened. The measure is the 63-observation active return against ACWI, the common V1 comparison benchmark. Classification treats a value within `1e-12` of +0.05, +0.02, -0.02, or -0.05 as that threshold. The stored active return stays at full precision. ACWI is not the mandate-specific benchmark for every regional market.
+- Market Regime Snapshot: DESIGN APPROVED — NOT IMPLEMENTED. It will assemble the four instrument results and will not calculate them. No composite directional regime exists.
 - What Changed: not implemented
 - UI: not implemented
 - Live or vendor market data: not implemented
@@ -65,4 +65,4 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 
 ## Next approved action
 
-Stop after Phase 1F. Do not implement directional state, What Changed, or UI until that work is authorised.
+Stop after this design. Do not implement the Market Regime Snapshot, What Changed, or UI until that work is authorised.

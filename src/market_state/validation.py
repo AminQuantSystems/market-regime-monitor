@@ -1,7 +1,7 @@
 """Deterministic validation of local prices and market configuration.
 
 This module does not calculate trend, momentum, volatility, benchmark relative
-performance, or a directional state. It checks the input contract and returns a
+performance, or a composite regime. It checks the input contract and returns a
 canonical price table.
 """
 

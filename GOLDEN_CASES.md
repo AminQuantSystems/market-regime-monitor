@@ -351,7 +351,7 @@ At 275 prices both states can be calculated. A constant `adjusted_close` of 100 
 
 Verified by `tests/test_relative_performance.py`. The earlier formal labels Leader, Strong, Weak, and Laggard are withdrawn. The classification labels are Strong Outperform, Outperform, Neutral, Underperform, and Strong Underperform.
 
-Each return is the simple 63-observation adjusted-close return, `price_t / price_(t-63) - 1`. Active return is the asset return minus the ACWI return. Classification uses that computed difference. There is no epsilon and no rounding before the comparison. In the price rows, both series are 100 at `t-63`. The active return in real arithmetic is then `(asset price at t - ACWI price at t) / 100`. The stored measurement keeps full precision. ACWI is the common comparison benchmark, not a claim that it is each market's mandate benchmark.
+Each return is the simple 63-observation adjusted-close return, `price_t / price_(t-63) - 1`. Active return is the asset return minus the ACWI return. Classification uses that computed difference. There is no epsilon and no rounding before the comparison. In the price rows, both series are 100 at `t-63`. The active return in real arithmetic is then `(asset price at t - ACWI price at t) / 100`. The stored measurement keeps full precision. Classification treats a computed active return within `1e-12` of +0.05, +0.02, -0.02, or -0.05 as that exact product threshold. The stored active return is not replaced by the threshold. ACWI is the common comparison benchmark, not a claim that it is each market's mandate benchmark.
 
 A separate Leaders / Laggards panel, if built later, ranks enabled markets by the continuous active return. That ranking is not these five labels.
 
@@ -481,41 +481,17 @@ Expected: the two results are identical.
 
 A request whose market is ACWI fails with `DATA_BENCHMARK_EXCLUDED` and does not return Neutral. A `benchmark_id` other than ACWI fails with `CONFIG_WRONG_BENCHMARK`. A missing asset or a missing ACWI fails with `DATA_MISSING_MARKET`. Date sets that differ through the as-of date fail with `DATA_DATE_INDEX_MISMATCH`. A duplicate date fails with `DATA_DUPLICATE_DATE`. An invalid endpoint adjusted close fails with `DATA_INVALID_PRICE`.
 
-## 11. Strong Up
+## 11. Withdrawn composite direction
 
-Trend +2, Momentum Accelerating, Benchmark Relative Performance Strong Outperform.
+An earlier design combined Trend, Momentum, and Benchmark Relative Performance into one Directional Regime. That design is withdrawn. It is not an acceptance case. Direction is the Trend state. Momentum, Volatility, and Benchmark Relative Performance stay visible beside it.
 
-Expected: Strong Up, `STATE_STRONG_UP`. Volatility may be any regime and must not change this result.
+These four readings are valid together and are not collapsed:
 
-## 12. Up with conflicting confirmation
+- Trend Strong Up and Momentum Deteriorating
+- Trend Strong Down and Momentum Accelerating
+- Trend Down, Momentum Deteriorating, Volatility High, and Benchmark Relative Performance Strong Outperform
 
-Trend +2, Momentum Deteriorating, Benchmark Relative Performance Strong Outperform.
-
-Momentum direction is negative. Relative-performance direction is positive. Strong Up fails because momentum is not positive. Up matches because the trend is positive and relative performance is positive.
-
-Expected: Up, `STATE_UP`.
-
-## 13. Neutral because a positive trend is opposed by both confirmations
-
-Trend +2, Momentum Negative, Benchmark Relative Performance Strong Underperform.
-
-Both confirmation directions are negative. Up fails because neither is positive. Strong Up fails for the same reason. The trend is not negative, so Down and Strong Down fail.
-
-Expected: Neutral, `STATE_NEUTRAL`.
-
-## 14. Strong Down
-
-Trend -2, Momentum Negative, Benchmark Relative Performance Strong Underperform.
-
-Expected: Strong Down, `STATE_STRONG_DOWN`. Volatility must not change this result.
-
-## 15. Down with conflicting confirmation
-
-Trend -2, Momentum Positive, Benchmark Relative Performance Underperform.
-
-Strong Down fails because momentum is not negative. Down matches because the trend is negative and relative performance is negative.
-
-Expected: Down, `STATE_DOWN`.
+The regime signature is the tuple of the four states, for example Strong Up / Accelerating / Elevated / Outperform. There is no fifth score.
 
 ## 16. Validator: 274 observations accepted
 
@@ -537,13 +513,13 @@ Every required series is a constant `adjusted_close` of 100 across all 275 dates
 
 Expected once What Changed exists: both states are calculated, every categorical label is unchanged, and the comparison text is exactly `No market-state change since previous session`.
 
-On this constant panel the labels on both dates are Trend score 0, Momentum Mixed, Volatility Normal, Benchmark Relative Performance Neutral, and directional state Neutral. The active return is 0 because every market, including ACWI, is unchanged. Volatility is Normal because every RV21 is 0, `L = 0`, `E = 252`, and the percentile is 50.
+On this constant panel the labels on both dates are Trend Neutral, score 0, Momentum Mixed, Volatility Normal, and Benchmark Relative Performance Neutral. The active return is 0 because every market, including ACWI, is unchanged. Volatility is Normal because every RV21 is 0, `L = 0`, `E = 252`, and the percentile is 50. None of the four dimensions changed.
 
 ## 17. 273 and 272 observations rejected
 
 The same aligned fixture with 273 observations per required series, and the same fixture with 272.
 
-Expected: `DATA_INSUFFICIENT_HISTORY`. No directional state and no instrument state are published. 273 prices do not contain the price at `t-273`, so the complete volatility regime cannot be calculated.
+Expected: `DATA_INSUFFICIENT_HISTORY`. No instrument state is published. 273 prices do not contain the price at `t-273`, so the complete volatility regime cannot be calculated.
 
 ## 18. Staleness of exactly 5 calendar days accepted
 

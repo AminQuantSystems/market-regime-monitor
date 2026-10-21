@@ -8,7 +8,7 @@
 
 Market Regime Monitor is a deterministic market-regime scanner. One of its four instruments is Benchmark Relative Performance against ACWI.
 
-A user should be able to understand the state of a group of financial markets within approximately 3–5 seconds, without interpreting a conventional multi-line technical-analysis chart.
+A user should be able to understand the core state of a market in approximately two seconds, without interpreting a conventional multi-line technical-analysis chart.
 
 ## Core objective
 
@@ -49,7 +49,7 @@ V1 will not:
 - present a chart crowded with technical-indicator lines
 - claim that the system predicts turning points
 
-Directional labels such as Strong Up and Strong Down describe the current rule-based state. They are not trade instructions.
+Strong Up and Strong Down are Trend states. The interface may show them under the heading Direction. They are not a composite of the other instruments, and they are not trade instructions.
 
 ## Design constraints
 
@@ -57,7 +57,7 @@ Directional labels such as Strong Up and Strong Down describe the current rule-b
 - The V1 numerical rules are the owner-approved rules in `FINANCE_SPEC.md`. They are no longer provisional.
 - Missing, stale, or insufficient history stops the affected result with an explicit error. Rows are not silently dropped and NaNs are not silently filled.
 - Calculations use only information available on or before the observation date. No look-ahead.
-- Volatility describes magnitude. It does not make a directional state more bullish or more bearish.
+- Volatility describes magnitude. It does not make Trend more bullish or more bearish.
 
 ## Out of scope for this phase
 

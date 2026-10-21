@@ -1,7 +1,7 @@
 # Finance specification — approved V1 model
 
 **Status:** owner-approved V1 finance rules.
-Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D implements realised volatility. Phase 1F implements Benchmark Relative Performance. Directional state and What Changed are specified here and are not implemented.
+Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D implements realised volatility. Phase 1F implements Benchmark Relative Performance, including the boundary classification tolerance. The four-dimensional Market Regime Snapshot is designed and is not implemented. What Changed is specified and is not implemented. There is no composite directional regime.
 
 These rules replace the provisional Phase 0 proposal. Comparisons are exact. The financial definition uses no tolerance and no epsilon.
 
@@ -148,13 +148,7 @@ The sign pairs cover every combination:
 
 No pair of states matches the same returns. The calculation owns these formulas. Raw panel validity stays with market-data validation.
 
-Momentum direction, used only by the directional table:
-
-| Momentum direction | States |
-|---|---|
-| positive | Accelerating, Positive |
-| neutral | Mixed |
-| negative | Negative, Deteriorating |
+Momentum does not overwrite Trend. A Strong Up trend with Deteriorating momentum is a valid reading, as is a Strong Down trend with Accelerating momentum. The disagreement stays visible.
 
 ## V — Volatility
 
@@ -162,7 +156,7 @@ Momentum direction, used only by the directional table:
 
 V1 Volatility is a backward-looking realised-movement magnitude instrument. It asks how large recent daily price movements have been relative to this market's own recent history.
 
-It does not say whether the market is bullish or bearish. It is not expected future volatility, implied volatility, value at risk, expected loss, a position size, or a trade direction. Volatility does not enter the directional state. A high or low regime is not bullish or bearish.
+It does not say whether the market is bullish or bearish. It is not expected future volatility, implied volatility, value at risk, expected loss, a position size, or a trade direction. Volatility carries no directional vote and does not alter the Trend reading. A high or low regime is not bullish or bearish.
 
 The 21-session calculation is deliberately aligned with the transparent realised-volatility construction published in the Cboe Realized Volatility Index methodology. Market Regime Monitor does not reproduce the Cboe index. Cboe RVOL derives its underlying spot value under its own index methodology. Market Regime Monitor uses validated `adjusted_close` market-proxy prices and adds its own historical percentile regime.
 
@@ -347,7 +341,7 @@ The five bands are Market Regime Monitor product classifications. They make the 
 | Underperform | -0.05 < active_return_63 <= -0.02 | `RELATIVE_PERFORMANCE_UNDERPERFORM` |
 | Strong Underperform | active_return_63 <= -0.05 | `RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM` |
 
-The five intervals cover every real number and do not overlap. There is no epsilon, no tolerance, and no rounding before classification. The exact endpoints are:
+The financial product thresholds are +5%, +2%, -2%, and -5%, stored as the decimals +0.05, +0.02, -0.02, and -0.05. The exact endpoints are:
 
 - +0.05 is Strong Outperform
 - +0.02 is Outperform
@@ -355,17 +349,15 @@ The five intervals cover every real number and do not overlap. There is no epsil
 - -0.02 is Underperform
 - -0.05 is Strong Underperform
 
+The stored `active_return_63` keeps the full computed simple-return difference. It is not rounded and it is not overwritten.
+
+Classification uses one numerical tolerance, and only there. If the computed active return is within `1e-12` return units of one of those four thresholds, it is classified as that exact threshold. The tolerance is absolute. The relative tolerance is 0. It is not applied to any other comparison, and it is not an investment materiality threshold, a wider neutral band, display rounding, or a trading tolerance. It exists because the same real percentage, written at two nominal price scales, can land a few units in the last place on opposite sides of a fixed decimal boundary. Away from those four thresholds the band comparisons are exact. The five intervals still cover every finite real number and do not overlap.
+
 The formal labels are Strong Outperform, Outperform, Neutral, Underperform, and Strong Underperform. Leader, Strong, Weak, and Laggard are not classification labels. Those words imply a cross-sectional rank.
 
 A later Market State Board may still show a separate Leaders / Laggards panel. That panel ranks enabled markets by the continuous `active_return_63` value, for example QQQ at +6.8 percent ahead of SPY at +2.7 percent. The ranking is not the five-way classification. ACWI is not ranked.
 
-Relative-performance direction, used only by the directional table:
-
-| Relative-performance direction | States |
-|---|---|
-| positive | Strong Outperform, Outperform |
-| neutral | Neutral |
-| negative | Underperform, Strong Underperform |
+Relative Performance does not alter absolute Direction. A market can be Down, with Deteriorating momentum and High volatility, and still be Strong Outperform against ACWI. That reading means the market is falling on its own path and has still beaten the common comparison benchmark.
 
 ### No risk adjustment
 
@@ -460,35 +452,49 @@ These constructions are outside V1 and are not implemented.
 
 Each of those answers a different question from the 63-observation arithmetic active return.
 
-## Directional state
+## Four market dimensions
 
-Direction uses Trend, Momentum direction, and Benchmark Relative Performance direction only. Volatility is excluded.
+Market Regime Monitor keeps four transparent dimensions:
 
-This is a decision table with a fixed precedence. It is not a sum, a weighted score, or a hidden composite.
+- T — Trend
+- M — Momentum
+- V — Volatility
+- R — Benchmark Relative Performance
 
-| Order | State | Rule | Reason code |
-|---:|---|---|---|
-| 1 | Strong Up | Trend == +2 and momentum direction is positive and relative-performance direction is positive | `STATE_STRONG_UP` |
-| 2 | Strong Down | Trend == -2 and momentum direction is negative and relative-performance direction is negative | `STATE_STRONG_DOWN` |
-| 3 | Up | Trend > 0 and at least one of momentum direction or relative-performance direction is positive | `STATE_UP` |
-| 4 | Down | Trend < 0 and at least one of momentum direction or relative-performance direction is negative | `STATE_DOWN` |
-| 5 | Neutral | every remaining combination | `STATE_NEUTRAL` |
+There is no hidden composite score. An earlier design that built a fifth Directional Regime from Trend, Momentum, and Benchmark Relative Performance is withdrawn. Those three readings are not independent votes. Trend and Momentum both come from the same adjusted-close history, so weighting them together would count similar price behaviour twice.
 
-The first matching row wins. Rows 3 and 4 are reached only when rows 1 and 2 have not matched, which is the required exclusion of Strong Up from Up and of Strong Down from Down.
+Trend supplies structural Direction. Its states are Strong Up, Up, Neutral, Down, and Strong Down. A later interface may show that Trend state under the heading Direction. That heading is presentation only. There is no second direction calculation.
 
-Coverage of the 45 combinations (5 trend scores × 3 momentum directions × 3 relative-performance directions):
+Momentum stays independently visible: Accelerating, Positive, Mixed, Negative, and Deteriorating. It describes recent price pace. It does not overwrite Trend.
 
-| State | Combinations | Why there is no second match |
-|---|---:|---|
-| Strong Up | 1 | Trend is +2, so Strong Down, Down, and Neutral do not apply. The Up row is not reached. |
-| Strong Down | 1 | Trend is -2, so Strong Up, Up, and Neutral do not apply. The Down row is not reached. |
-| Up | 9 | Trend is +1 or +2, so Down and Strong Down do not apply. The one Strong Up combination was already taken. |
-| Down | 9 | Trend is -1 or -2, so Up and Strong Up do not apply. The one Strong Down combination was already taken. |
-| Neutral | 25 | Complement: 45 − 1 − 1 − 9 − 9. Includes Trend 0 with any confirmation, and a positive trend opposed by both non-positive momentum and non-positive relative performance. |
+Volatility stays independent: Low, Normal, Elevated, and High. It measures realised movement magnitude and carries no directional vote.
 
-A positive trend with negative momentum and negative relative performance is Neutral. It is not Up, because neither confirmation is positive, and it is not Strong Up. The mirror image, a negative trend with both confirmations positive, is Neutral.
+Benchmark Relative Performance stays independent: Strong Outperform, Outperform, Neutral, Underperform, and Strong Underperform. It compares the market with the common ACWI benchmark. It does not change absolute Direction.
 
-These labels are state names. They are not buy or sell signals and they are not forecasts.
+Agreement and disagreement are shown rather than collapsed. These readings can stand together:
+
+- Direction Strong Up, Momentum Deteriorating
+- Direction Strong Down, Momentum Accelerating
+- Direction Down, Momentum Deteriorating, Volatility High, Relative Performance Strong Outperform
+
+The last reading is a market that is falling on its own path and has still outperformed ACWI.
+
+The four states together are the descriptive regime signature, for example Strong Up / Accelerating / Elevated / Outperform. That is a tuple of transparent states. V1 does not turn it into one score, one probability, one hidden regime code, or a label such as Risk-On, Risk-Off, Goldilocks, Crisis, or Expansion. Those would be separate models.
+
+### Market Regime Snapshot
+
+Design only. Not implemented.
+
+`MarketRegimeSnapshot` assembles results that Trend, Momentum, Volatility, and Benchmark Relative Performance have already calculated. It performs no finance calculation of its own and it does not duplicate their formulas. The proposed fields are:
+
+- `market_id`
+- `as_of_date`
+- the Trend result, which is also the Direction reading
+- the Momentum result
+- the Volatility result
+- the Benchmark Relative Performance result
+
+The underlying immutable result objects are retained so the measurements and reason codes stay auditable. The snapshot has no composite score, confidence, probability, AI regime, buy or sell instruction, recommendation, expected return, or position size.
 
 ## What changed
 
@@ -523,9 +529,11 @@ The sentence `No market-state change since previous session` is produced only wh
 
 - at least 275 valid observations exist
 - both the latest state and the previous state were calculated successfully
-- none of the five categorical states changed
+- none of the four dimensions changed
 
-Those five states are the directional state, Trend, Momentum, Volatility, and Benchmark Relative Performance. A difference in any of them is a categorical transition. Each transition names the instrument, the previous label, the new label, and the reason code.
+Those four dimensions are Direction / Trend, Momentum, Volatility, and Benchmark Relative Performance. There is no composite-regime transition. A difference in any dimension is a categorical transition. Each transition names the dimension, the previous label, and the new label. Examples are Up to Strong Up, Positive to Accelerating, Normal to Elevated, and Neutral to Outperform.
+
+A later primary board may show a compact mark that a dimension changed. If space forces a presentation order, it is Direction, then Momentum, then Volatility, then Relative Performance. That order is display priority only. It is not a financial weight and it is not a severity score.
 
 This comparison is specified here and is not implemented. The running validator enforces 274 observations. The 275 What Changed minimum is not a validator gate.
 
@@ -627,11 +635,6 @@ Finance classifications:
 - `RELATIVE_PERFORMANCE_NEUTRAL`
 - `RELATIVE_PERFORMANCE_UNDERPERFORM`
 - `RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM`
-- `STATE_STRONG_UP`
-- `STATE_UP`
-- `STATE_NEUTRAL`
-- `STATE_DOWN`
-- `STATE_STRONG_DOWN`
 
 Phase 1A validation codes, all reachable from the validator:
 
@@ -685,4 +688,4 @@ Specified for the later What Changed phase, and not current behaviour:
 - Direct global-index feeds
 - FX conversion
 - Buy or sell signals, price forecasts, or turning-point claims
-- Any use of volatility inside the directional table
+- A composite directional regime, a hidden regime score, or a label such as Risk-On, Risk-Off, Goldilocks, Crisis, or Expansion

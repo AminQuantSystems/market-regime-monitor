@@ -4,39 +4,63 @@
 
 ## Intent
 
-The interface should feel like a restrained instrument panel: dense, legible, and calm enough to read in a few seconds. The aviation reference is limited to that discipline. V1 is not an aviation theme. No yokes, attitude indicators, altimeter skins, runway graphics, or decorative gauges.
+The interface should feel like a restrained control-room instrument panel: dense, legible, and calm enough to scan. It is not an aviation theme. No decorative gauges are required to read the state.
 
-Market Regime Monitor must be visually distinct from Portfolio Risk X-Ray. Portfolio Risk X-Ray uses a blue allocation band and amber concentration marks on a navy field. This product should use a darker charcoal field, a single cool status hue for neutral information, and a separate muted pair for up and down states. Colour encodes state. It is not decoration.
+Market Regime Monitor must be visually distinct from Portfolio Risk X-Ray. Portfolio Risk X-Ray uses a blue allocation band and amber concentration marks on a navy field. This product should use a darker charcoal field, a single cool status hue for neutral information, and a separate muted pair for up and down states. Colour encodes state. It is not decoration, and colour is never the only carrier of meaning.
 
-## Primary principle
+## Two-second requirement
 
-A user understands the state of the configured markets in approximately 3–5 seconds.
+A user must be able to understand the core state of one market in approximately two seconds. This is a hard requirement for the primary Market State Board.
 
-The first screen answers, in order:
+The board uses fixed columns, in this order:
 
-1. What is the directional state of each market?
-2. Which of trend, momentum, and relative performance support that state, and is volatility calm or elevated?
-3. What changed?
+```text
+MARKET | DIRECTION | MOMENTUM | VOL | RELATIVE | CHANGE
+```
+
+Direction is the Trend state. It is a heading, not a second calculation. Examples:
+
+```text
+NASDAQ 100  | STRONG UP | ACCELERATING  | ELEVATED | OUTPERFORM        | M ↑
+UK EQUITIES | DOWN      | DETERIORATING | HIGH     | STRONG OUTPERFORM | V ↑
+```
+
+The second row is a valid state. The market can be falling, with deteriorating pace and high realised volatility, and still be strongly ahead of the common ACWI benchmark.
+
+Design rules for that scan:
+
+- Words come before raw numbers.
+- Every market uses the same column positions and the same visual grammar.
+- Colour is restrained and institutional. A label remains readable without its colour.
+- No gauge is required to interpret a state.
+- No conventional indicator chart is required to understand the state.
+- The user does not calculate anything.
+- Ordinary state labels do not need a legend.
+- Detailed figures and reason codes appear on drill-down.
+- The primary screen is for scanning, not for analytical density.
+
+The four words together are the regime signature, for example Strong Up / Accelerating / Elevated / Outperform. The interface shows that tuple. It does not collapse it into one score, one probability, or a name such as Risk-On or Crisis.
 
 ## Market State Board
 
-The board is the primary surface. It is a compact set of market cards, one card per configured asset, in a stable order.
+The board is the primary surface. It is one row per configured asset, in a stable order.
 
-Each card shows only:
+Each row shows:
 
-- asset name
-- directional state: Strong Up, Up, Neutral, Down, or Strong Down
-- four instrument readings: Trend, Momentum, Volatility, Relative Performance
-- a short reason line taken from the library reason code, not composed by the interface
-- data freshness for that asset
+- market name
+- Direction, which is the Trend state: Strong Up, Up, Neutral, Down, or Strong Down
+- Momentum: Accelerating, Positive, Mixed, Negative, or Deteriorating
+- Volatility: Low, Normal, Elevated, or High
+- Relative Performance: Strong Outperform, Outperform, Neutral, Underperform, or Strong Underperform
+- a compact change mark, once What Changed exists
 
-The directional wording is a state name. The card must not say buy, sell, overweight, or underweight.
-
-Cards are readable without hover text. Nothing required for the 3–5 second reading may depend on a tooltip.
+The row must not say buy, sell, overweight, or underweight. Nothing required for the two-second reading may depend on a tooltip.
 
 ## What changed
 
-A single panel lists state transitions since the approved comparison horizon: asset, instrument or directional state, previous label, new label. If nothing in the approved labels changed, the panel says so. It does not invent a narrative.
+What Changed is not implemented. When it exists, a transition is a change in Direction, Momentum, Volatility, or Relative Performance. There is no composite-regime transition. If none of the four dimensions changed, and both complete states were calculated from at least 275 observations, the panel may say `No market-state change since previous session`.
+
+The primary row may show a compact mark that a dimension changed. If space forces a choice, the presentation order is Direction, Momentum, Volatility, then Relative Performance. That order is not a financial weight and it is not a severity score. A drill-down lists the dimension, the previous label, and the new label. It does not invent a narrative.
 
 ## Leaders and laggards
 

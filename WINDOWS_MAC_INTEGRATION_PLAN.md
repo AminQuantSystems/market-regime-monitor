@@ -35,7 +35,7 @@ Live trading, order routing, credential handling, and ad-hoc shell access are no
 All of the following are prerequisites. Satisfying one does not imply the next.
 
 1. **Benchmark.** Compare Windows and Mac on a representative, non-secret finance workload of the approved V1 calculations. Record runtime, hardware, input size, and software versions. The owner decides whether the difference justifies a worker.
-2. **Project-specific staging folders.** Separate Windows and Mac directories used only by Market State Flight Deck. No shared drop folder with other projects.
+2. **Project-specific staging folders.** Separate Windows and Mac directories used only by Market Regime Monitor. No shared drop folder with other projects.
 3. **Canonical path allowlists.** The job may read and write only those staging paths. Paths outside the list fail the job before execution.
 4. **Fixed approved job profiles.** A named profile lists the command, the parameters, the input schema, and the output schema. Interactive shells and arbitrary commands are not profiles.
 5. **Input and output schemas.** Versioned, documented, and validated on both sides. An output that does not match the schema is rejected.

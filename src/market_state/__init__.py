@@ -1,4 +1,4 @@
-"""Market State Flight Deck.
+"""Market Regime Monitor.
 
 Phase 1C calculates Trend and short/medium-horizon Momentum, and validates
 local prices. Volatility, relative strength, and directional state are not included.

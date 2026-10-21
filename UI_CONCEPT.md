@@ -6,7 +6,7 @@
 
 The interface should feel like a restrained instrument panel: dense, legible, and calm enough to read in a few seconds. The aviation reference is limited to that discipline. V1 is not an aviation theme. No yokes, attitude indicators, altimeter skins, runway graphics, or decorative gauges.
 
-Market State Flight Deck must be visually distinct from Portfolio Risk X-Ray. Portfolio Risk X-Ray uses a blue allocation band and amber concentration marks on a navy field. This product should use a darker charcoal field, a single cool status hue for neutral information, and a separate muted pair for up and down states. Colour encodes state. It is not decoration.
+Market Regime Monitor must be visually distinct from Portfolio Risk X-Ray. Portfolio Risk X-Ray uses a blue allocation band and amber concentration marks on a navy field. This product should use a darker charcoal field, a single cool status hue for neutral information, and a separate muted pair for up and down states. Colour encodes state. It is not decoration.
 
 ## Primary principle
 

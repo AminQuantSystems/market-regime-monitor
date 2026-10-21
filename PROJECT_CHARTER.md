@@ -1,12 +1,12 @@
 # Project charter
 
-**Product:** Market State Flight Deck
-**Intended public repository name:** `market-state-flight-deck`
+**Product:** Market Regime Monitor
+**Intended public repository name:** `market-regime-monitor`
 **Status:** Phase 0 — product and finance design. No application code.
 
 ## Product definition
 
-Market State Flight Deck is a deterministic market-regime and relative-strength scanner.
+Market Regime Monitor is a deterministic market-regime and relative-strength scanner.
 
 A user should be able to understand the state of a group of financial markets within approximately 3–5 seconds, without interpreting a conventional multi-line technical-analysis chart.
 

@@ -102,7 +102,7 @@ Equality of price and SMA50, or of SMA50 and SMA200, fails the strict chain and 
 
 V1 Momentum is short/medium-horizon time-series market-state momentum. It asks whether recent adjusted-close movement is positive or negative, and whether the recent per-observation pace is strengthening or weakening relative to the medium-term pace. Trend already represents the slower 50/200 structural direction.
 
-This is not the academic 12-minus-1 equity factor, not a cross-sectional stock-selection factor, and not a 6-month or 12-month institutional momentum signal. Those slower horizons are possible future research. They are not part of V1. The 21- and 63-observation windows are for responsiveness on this flight deck. They are not a claim of a universal institutional standard.
+This is not the academic 12-minus-1 equity factor, not a cross-sectional stock-selection factor, and not a 6-month or 12-month institutional momentum signal. Those slower horizons are possible future research. They are not part of V1. The 21- and 63-observation windows are for responsiveness in Market Regime Monitor. They are not a claim of a universal institutional standard.
 
 Momentum is not a buy or sell signal, a position size, a volatility-adjusted allocation, or a price forecast. R21 and R63 are not divided by volatility. Volatility and relative strength stay separate instruments. Later portfolio construction may scale by volatility. V1 Momentum does not.
 
@@ -164,9 +164,9 @@ V1 Volatility is a backward-looking realised-movement magnitude instrument. It a
 
 It does not say whether the market is bullish or bearish. It is not expected future volatility, implied volatility, value at risk, expected loss, a position size, or a trade direction. Volatility does not enter the directional state. A high or low regime is not bullish or bearish.
 
-The 21-session calculation is deliberately aligned with the transparent realised-volatility construction published in the Cboe Realized Volatility Index methodology. Flight Deck does not reproduce the Cboe index. Cboe RVOL derives its underlying spot value under its own index methodology. Flight Deck uses validated `adjusted_close` market-proxy prices and adds its own historical percentile regime.
+The 21-session calculation is deliberately aligned with the transparent realised-volatility construction published in the Cboe Realized Volatility Index methodology. Market Regime Monitor does not reproduce the Cboe index. Cboe RVOL derives its underlying spot value under its own index methodology. Market Regime Monitor uses validated `adjusted_close` market-proxy prices and adds its own historical percentile regime.
 
-The 252-observation percentile and the 25/75/90 labels are a Flight Deck classification choice. They are not a Cboe standard and they are not a universal institutional standard. Their purpose is an interpretable asset-relative state.
+The 252-observation percentile and the 25/75/90 labels are a Market Regime Monitor classification choice. They are not a Cboe standard and they are not a universal institutional standard. Their purpose is an interpretable asset-relative state.
 
 ### RV21
 
@@ -193,7 +193,7 @@ This is the root-mean-square size of the daily log moves. Subtracting the sample
 
 ### Regime
 
-The Cboe reference applies only to the RV21 measurement above. The historical percentile is a Market State Flight Deck design. Cboe does not specify this regime, and the 25/75/90 bands are not a Cboe standard or a universal institutional standard.
+The Cboe reference applies only to the RV21 measurement above. The historical percentile is a Market Regime Monitor design. Cboe does not specify this regime, and the 25/75/90 bands are not a Cboe standard or a universal institutional standard.
 
 The percentile answers where today's realised volatility sits relative to this market's previous 252 realised-volatility observations. It is a descriptive historical rank. It is not the probability that volatility will rise or fall, not a confidence level, not a p-value, not a tail probability, not a forecast, and not a claim of statistical significance. Consecutive 21-observation RV21 values overlap and are serially dependent, so the rank is not treated as a sample of independent draws.
 

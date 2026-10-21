@@ -1,8 +1,8 @@
 # Project state
 
-**Project:** Market State Flight Deck
+**Project:** Market Regime Monitor
 **Local root:** `<local-worktree>`
-**Intended repository name, not created:** `market-state-flight-deck`
+**Intended repository name, not created:** `market-regime-monitor`
 **As of:** 21 October 2026
 
 ## Phase

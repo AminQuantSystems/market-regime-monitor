@@ -7,7 +7,7 @@ comparison benchmark used so every enabled market shares one scale. It is not
 claimed to be the mandate-specific performance benchmark for each regional
 market. This is cross-market comparison, not performance reporting.
 
-The module does not use Trend, Momentum, Volatility, or directional state.
+The module does not use Trend, Momentum, or Volatility, and it does not build a composite regime.
 """
 
 from __future__ import annotations
@@ -27,6 +27,13 @@ STRONG_OUTPERFORM_MIN = 0.05
 OUTPERFORM_MIN = 0.02
 UNDERPERFORM_MAX = -0.02
 STRONG_UNDERPERFORM_MAX = -0.05
+CLASSIFICATION_TOLERANCE = 1e-12
+CLASSIFICATION_BOUNDARIES = (
+    STRONG_OUTPERFORM_MIN,
+    OUTPERFORM_MIN,
+    UNDERPERFORM_MAX,
+    STRONG_UNDERPERFORM_MAX,
+)
 
 
 @dataclass(frozen=True)
@@ -49,10 +56,14 @@ def classify_relative_performance(active_return_63) -> tuple[str, str]:
     """Classify one computed active return.
 
     This is a predicate on a single finite number. It does not rebuild the
-    return from prices. Comparisons are exact. There is no tolerance and no
-    rounding. The five bands cover every finite real value and do not overlap.
+    return from prices and it does not replace the stored active return.
+    A value within ``1e-12`` of ``+0.05``, ``+0.02``, ``-0.02``, or ``-0.05``
+    is classified as that exact product boundary. The tolerance is not applied
+    anywhere else. It is not an investment band and it does not round the
+    number. Away from those four boundaries the comparisons are exact.
+    The five bands cover every finite real value and do not overlap.
     """
-    active = _finite_active_return(active_return_63)
+    active = _for_classification(_finite_active_return(active_return_63))
     if active >= STRONG_OUTPERFORM_MIN:
         return "Strong Outperform", "RELATIVE_PERFORMANCE_STRONG_OUTPERFORM"
     if active >= OUTPERFORM_MIN:
@@ -198,6 +209,19 @@ def _simple_return(price_t: float, lagged_price: float) -> float:
             "simple return is not a finite number greater than -1",
         )
     return simple
+
+
+def _for_classification(active: float) -> float:
+    """Map a float that sits on a product boundary back to that boundary.
+
+    The stored active return is left unchanged. Only the value used by the
+    five band comparisons is adjusted, and only when it is within
+    ``CLASSIFICATION_TOLERANCE`` of one of the four fixed thresholds.
+    """
+    for boundary in CLASSIFICATION_BOUNDARIES:
+        if abs(active - boundary) <= CLASSIFICATION_TOLERANCE:
+            return boundary
+    return active
 
 
 def _finite_active_return(value: object) -> float:

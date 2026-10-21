@@ -176,12 +176,31 @@ def test_positive_momentum_can_coexist_with_strong_underperform():
         (0.0, "Neutral", "RELATIVE_PERFORMANCE_NEUTRAL"),
         (-0.02, "Underperform", "RELATIVE_PERFORMANCE_UNDERPERFORM"),
         (-0.05, "Strong Underperform", "RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM"),
-        (math.nextafter(0.05, 0.0), "Outperform", "RELATIVE_PERFORMANCE_OUTPERFORM"),
-        (math.nextafter(0.02, 0.0), "Neutral", "RELATIVE_PERFORMANCE_NEUTRAL"),
-        (math.nextafter(-0.02, 0.0), "Neutral", "RELATIVE_PERFORMANCE_NEUTRAL"),
+        (0.05 + 1e-12, "Strong Outperform", "RELATIVE_PERFORMANCE_STRONG_OUTPERFORM"),
+        (0.05 - 1e-12, "Strong Outperform", "RELATIVE_PERFORMANCE_STRONG_OUTPERFORM"),
+        (0.02 + 1e-12, "Outperform", "RELATIVE_PERFORMANCE_OUTPERFORM"),
+        (0.02 - 1e-12, "Outperform", "RELATIVE_PERFORMANCE_OUTPERFORM"),
+        (-0.02 + 1e-12, "Underperform", "RELATIVE_PERFORMANCE_UNDERPERFORM"),
+        (-0.02 - 1e-12, "Underperform", "RELATIVE_PERFORMANCE_UNDERPERFORM"),
+        (-0.05 + 1e-12, "Strong Underperform", "RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM"),
+        (-0.05 - 1e-12, "Strong Underperform", "RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM"),
+        (math.nextafter(0.05, 0.0), "Strong Outperform", "RELATIVE_PERFORMANCE_STRONG_OUTPERFORM"),
+        (math.nextafter(0.02, 0.0), "Outperform", "RELATIVE_PERFORMANCE_OUTPERFORM"),
+        (math.nextafter(-0.02, 0.0), "Underperform", "RELATIVE_PERFORMANCE_UNDERPERFORM"),
         (math.nextafter(-0.02, -1.0), "Underperform", "RELATIVE_PERFORMANCE_UNDERPERFORM"),
-        (math.nextafter(-0.05, 0.0), "Underperform", "RELATIVE_PERFORMANCE_UNDERPERFORM"),
+        (math.nextafter(-0.05, 0.0), "Strong Underperform", "RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM"),
         (math.nextafter(-0.05, -1.0), "Strong Underperform", "RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM"),
+        (0.05 - 2e-12, "Outperform", "RELATIVE_PERFORMANCE_OUTPERFORM"),
+        (0.02 - 2e-12, "Neutral", "RELATIVE_PERFORMANCE_NEUTRAL"),
+        (0.02 + 2e-12, "Outperform", "RELATIVE_PERFORMANCE_OUTPERFORM"),
+        (-0.02 + 2e-12, "Neutral", "RELATIVE_PERFORMANCE_NEUTRAL"),
+        (-0.02 - 2e-12, "Underperform", "RELATIVE_PERFORMANCE_UNDERPERFORM"),
+        (-0.05 + 2e-12, "Underperform", "RELATIVE_PERFORMANCE_UNDERPERFORM"),
+        (-0.05 - 2e-12, "Strong Underperform", "RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM"),
+        (0.03, "Outperform", "RELATIVE_PERFORMANCE_OUTPERFORM"),
+        (0.01, "Neutral", "RELATIVE_PERFORMANCE_NEUTRAL"),
+        (-0.03, "Underperform", "RELATIVE_PERFORMANCE_UNDERPERFORM"),
+        (-0.08, "Strong Underperform", "RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM"),
     ],
 )
 def test_classifier_endpoints_and_adjacent_values(active, state, reason):
@@ -193,6 +212,63 @@ def test_classifier_rejects_invalid_active_return(value):
     with pytest.raises(MarketDataError) as error:
         classify_relative_performance(value)
     assert error.value.code == "DATA_INVALID_ACTIVE_RETURN"
+
+
+def endpoints(asset_start, asset_end, benchmark_start, benchmark_end) -> pd.DataFrame:
+    labels = dates_ending(64)
+    asset = [100.0] * 64
+    benchmark = [100.0] * 64
+    asset[0] = asset_start
+    asset[-1] = asset_end
+    benchmark[0] = benchmark_start
+    benchmark[-1] = benchmark_end
+    return pd.concat(
+        [series(MARKET, asset, labels), series(BENCHMARK, benchmark, labels)],
+        ignore_index=True,
+    )
+
+
+@pytest.mark.parametrize("scale", [0.01, 0.1, 1, 10, 100, 1000, 1e6])
+@pytest.mark.parametrize(
+    ("name", "asset_end", "benchmark_end", "state"),
+    [
+        ("plus_five", 110, 105, "Strong Outperform"),
+        ("plus_two", 105, 103, "Outperform"),
+        ("minus_two", 101, 103, "Underperform"),
+        ("minus_five", 98, 103, "Strong Underperform"),
+    ],
+)
+def test_boundary_classification_is_stable_across_price_scales(scale, name, asset_end, benchmark_end, state):
+    frame = endpoints(100 * scale, asset_end * scale, 100 * scale, benchmark_end * scale)
+    result = calculate_relative_performance(frame, MARKET, BENCHMARK, as_of(frame))
+    raw = simple(asset_end * scale, 100 * scale) - simple(benchmark_end * scale, 100 * scale)
+
+    assert result.relative_performance_state == state
+    assert result.active_return_63 == raw
+
+
+def test_known_negative_two_percent_price_scale_stays_underperform():
+    frame = endpoints(10, 10.1, 10, 10.3)
+    result = calculate_relative_performance(frame, MARKET, BENCHMARK, as_of(frame))
+    raw = simple(10.1, 10) - simple(10.3, 10)
+
+    assert raw != -0.02
+    assert abs(raw - (-0.02)) <= 1e-12
+    assert result.active_return_63 == raw
+    assert result.relative_performance_state == "Underperform"
+    assert result.reason_code == "RELATIVE_PERFORMANCE_UNDERPERFORM"
+
+
+def test_known_negative_five_percent_price_scale_stays_strong_underperform():
+    frame = endpoints(10, 9.8, 10, 10.3)
+    result = calculate_relative_performance(frame, MARKET, BENCHMARK, as_of(frame))
+    raw = simple(9.8, 10) - simple(10.3, 10)
+
+    assert raw != -0.05
+    assert abs(raw - (-0.05)) <= 1e-12
+    assert result.active_return_63 == raw
+    assert result.relative_performance_state == "Strong Underperform"
+    assert result.reason_code == "RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM"
 
 
 def test_sixty_four_observations_are_accepted_and_sixty_three_are_rejected():

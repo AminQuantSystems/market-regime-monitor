@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 2A — MEEM Toolkit Design System and Market State Board specification complete.
+Phase 2B — UI technology and application architecture approved.
 
 ## What exists
 
@@ -23,6 +23,7 @@ Phase 2A — MEEM Toolkit Design System and Market State Board specification com
 - Pytest coverage for validation, Trend, Momentum, Volatility, Benchmark Relative Performance, snapshot orchestration, and categorical change
 - The MEEM Toolkit Design System v1.0 in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`
 - The Market State Board and detail specification in `UI_CONCEPT.md`
+- The UI technology and API architecture in `UI_ARCHITECTURE.md`
 - This file, plus the read-only Windows/Mac plan
 
 ## History rule
@@ -55,12 +56,16 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Tests: 309 passed
 - MEEM production brand palette: locked
 - MEEM Toolkit Design System: v1.0 specified
-- Market State Board: design specified, not implemented
-- Detail and drill-down: design specified, not implemented
-- UI framework: not yet selected
+- Market State Board: specified, not implemented
+- Detail panel: specified, not implemented
+- Frontend: React, TypeScript, and Vite approved, not implemented
+- Backend UI adapter: FastAPI approved, not implemented
+- V1 data input: architecture specified, implementation not started
 - UI implementation: not started
 - Live or vendor market data: not implemented
 - Backtesting: not implemented
+- Database: not required for V1
+- Authentication: not required for V1
 - Mac integration: not authorised
 - GitHub publication: none
 - Current snapshot minimum: 274
@@ -80,8 +85,8 @@ One local measurement on 21 October 2026, Python 3.14, this Windows machine: ass
 
 ## Deferred finding
 
-The production calculation path creates snapshots through the integrity-hardened snapshot API. The lower-level pure comparator does not independently re-check malformed nested component identity on a manually constructed snapshot. This is deferred low-priority public-API hardening for a future pre-publication phase. It is not a UI blocker. `change.py` was not altered in Phase 2A.
+The production calculation path creates snapshots through the integrity-hardened snapshot API. The lower-level pure comparator does not independently re-check malformed nested component identity on a manually constructed snapshot. This is deferred low-priority public-API hardening for a future pre-publication phase. It is not a UI blocker. `change.py` was not altered in Phase 2A or Phase 2B.
 
 ## Next approved action
 
-Stop after Phase 2A. Do not implement the UI, select a framework, or change the frozen finance core until that work is authorised.
+Stop after Phase 2B. Do not implement the UI or the FastAPI adapter, and do not change the frozen finance core, until that work is authorised.

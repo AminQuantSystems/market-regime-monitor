@@ -1,6 +1,6 @@
 # Interface concept
 
-**Status:** design specified. No interface is implemented. No UI framework is selected. Current project status is in `PROJECT_STATE.md`. Visual tokens are in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`.
+**Status:** design specified. No interface is implemented. The approved application architecture is React, TypeScript, and Vite in front of a thin FastAPI adapter, recorded in `UI_ARCHITECTURE.md`. That stack is not implemented. Current project status is in `PROJECT_STATE.md`. Visual tokens are in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`.
 
 ## Intent
 

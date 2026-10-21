@@ -1,7 +1,7 @@
 # Finance specification — approved V1 model
 
 **Status:** owner-approved V1 finance rules.
-Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D implements realised volatility. Relative strength, directional state, and What Changed are specified here and are not implemented.
+Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D implements realised volatility. Phase 1E approves the Benchmark Relative Performance design. That instrument, directional state, and What Changed are specified here and are not implemented.
 
 These rules replace the provisional Phase 0 proposal. Comparisons are exact. The financial definition uses no tolerance and no epsilon.
 
@@ -20,7 +20,7 @@ V1 uses US-listed global-equity market proxies so that every series shares one t
 | EEM | Emerging Markets | ACWI | yes | yes |
 | ACWI | global-equity benchmark | ACWI | no | no |
 
-ACWI is mandatory. It is the V1 benchmark and is required for every relative-strength calculation. It is not a normal board card, and its relative strength is not calculated or displayed as a board-market result.
+ACWI is mandatory. It is the V1 benchmark and is required for every Benchmark Relative Performance calculation. It is not a normal board card. It does not receive a Benchmark Relative Performance classification against itself, and that result is not displayed as a board-market result.
 
 ACWI's `benchmark_id` is `ACWI` only so the configuration schema stays uniform. ACWI's `enabled` value is `False`.
 
@@ -104,7 +104,7 @@ V1 Momentum is short/medium-horizon time-series market-state momentum. It asks w
 
 This is not the academic 12-minus-1 equity factor, not a cross-sectional stock-selection factor, and not a 6-month or 12-month institutional momentum signal. Those slower horizons are possible future research. They are not part of V1. The 21- and 63-observation windows are for responsiveness in Market Regime Monitor. They are not a claim of a universal institutional standard.
 
-Momentum is not a buy or sell signal, a position size, a volatility-adjusted allocation, or a price forecast. R21 and R63 are not divided by volatility. Volatility and relative strength stay separate instruments. Later portfolio construction may scale by volatility. V1 Momentum does not.
+Momentum is not a buy or sell signal, a position size, a volatility-adjusted allocation, or a price forecast. R21 and R63 are not divided by volatility. Volatility and Benchmark Relative Performance stay separate instruments. Later portfolio construction may scale by volatility. V1 Momentum does not.
 
 Lookbacks are trading observations, not calendar days. Prices are `adjusted_close`. There is no fill, interpolation, or use of a later observation.
 
@@ -293,58 +293,179 @@ These extensions are not part of V1 and are not implemented.
 
 V1 measures realised volatility from past adjusted closes. A forecast estimates volatility that has not yet been observed. Implied volatility is a price from the options market. Those three jobs stay separate.
 
-## R — Relative strength
+## R — Benchmark Relative Performance
+
+**Status:** design approved in Phase 1E. Not implemented. No calculation module and no tests exist for this instrument.
+
+The permanent V1 name is Benchmark Relative Performance. The shorter label Relative Performance may be used on a later interface. The earlier working name "relative strength" is withdrawn as the instrument name. That phrase is used in finance for RSI, cross-sectional momentum, a relative-price ratio, and peer ranking. This instrument is none of those.
+
+The primary institutional concept is active return: the asset's total return minus the benchmark's total return over the same horizon. V1 reports that difference. It does not substitute a price ratio divided by the benchmark price ratio, a logarithmic relative-return spread, regression alpha, CAPM alpha, an information ratio, tracking-error-adjusted performance, volatility-normalised momentum, or a peer z-score. Those are different measures.
+
+### Formula
+
+Both series use `adjusted_close`. The horizon is 63 trading observations, including the latest session. `t-63` is the observation 63 places before `t`, not 63 calendar days. There is no one-month skip. That skip belongs to some equity momentum-factor methodologies and solves a different problem.
 
 ```text
-relative_strength = asset_R63 - ACWI_R63
+asset_return_63 = asset_price_t / asset_price_(t-63) - 1
+benchmark_return_63 = ACWI_price_t / ACWI_price_(t-63) - 1
+active_return_63 = asset_return_63 - benchmark_return_63
 ```
 
-Both returns use the approved simple 63-observation return. The result is a decimal return. A difference of 0.02 is two percentage points.
+The stored value is the decimal difference. An active return of +0.04 means the asset outperformed ACWI by 4 percentage points over the 63 observations. An active return of -0.05 means the asset underperformed ACWI by 5 percentage points.
+
+An asset return of +0.10 and an ACWI return of +0.06 produce +0.04. An asset return of -0.03 and an ACWI return of +0.02 produce -0.05.
+
+The asset and the benchmark use the same start date, the same end date, the same 63-observation lookback, and the same adjusted-close convention. The panel validator already requires one shared date index for every required series. A standalone calculation must still fail if the asset and benchmark observations it needs are not aligned. It must not choose a nearby date, borrow a later row, fill a gap, or interpolate.
+
+### Horizon
+
+Sixty-three observations are about one trading quarter. The same medium horizon is already used by Momentum, and it is responsive enough for a market-regime monitor. Relative and cross-sectional momentum research often looks at multi-month performance, and institutional factor methodologies commonly use longer 6-month and 12-month horizons. Market Regime Monitor does not claim that 63 observations are a universal institutional momentum-factor standard. This is a responsive benchmark-relative market-state measurement.
+
+### Benchmark
+
+Every enabled board market uses `benchmark_id = ACWI`. ACWI is mandatory. It is not a normal board market, and it does not receive this classification against itself. A direct request for ACWI as the asset fails closed. It does not return a zero active return or Neutral.
+
+### Classification bands
+
+The five bands are Market Regime Monitor product classifications. They make the active return readable at a glance. They are not CFA, MSCI, S&P, regulatory, or universal institutional thresholds.
 
 | State | Rule | Reason code |
 |---|---|---|
-| Leader | relative_strength >= 0.05 | `RELATIVE_STRENGTH_LEADER` |
-| Strong | 0.02 <= relative_strength < 0.05 | `RELATIVE_STRENGTH_STRONG` |
-| Neutral | -0.02 < relative_strength < 0.02 | `RELATIVE_STRENGTH_NEUTRAL` |
-| Weak | -0.05 < relative_strength <= -0.02 | `RELATIVE_STRENGTH_WEAK` |
-| Laggard | relative_strength <= -0.05 | `RELATIVE_STRENGTH_LAGGARD` |
+| Strong Outperform | active_return_63 >= +0.05 | `RELATIVE_PERFORMANCE_STRONG_OUTPERFORM` |
+| Outperform | +0.02 <= active_return_63 < +0.05 | `RELATIVE_PERFORMANCE_OUTPERFORM` |
+| Neutral | -0.02 < active_return_63 < +0.02 | `RELATIVE_PERFORMANCE_NEUTRAL` |
+| Underperform | -0.05 < active_return_63 <= -0.02 | `RELATIVE_PERFORMANCE_UNDERPERFORM` |
+| Strong Underperform | active_return_63 <= -0.05 | `RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM` |
 
-These five intervals partition the real line and do not overlap. Exact boundaries:
+The five intervals cover every real number and do not overlap. There is no epsilon, no tolerance, and no rounding before classification. The exact endpoints are:
 
-- +0.05 is Leader
-- +0.02 is Strong
-- -0.02 is Weak
-- -0.05 is Laggard
+- +0.05 is Strong Outperform
+- +0.02 is Outperform
+- 0 is Neutral
+- -0.02 is Underperform
+- -0.05 is Strong Underperform
 
-Neutral is the open interval between -0.02 and +0.02.
+The formal labels are Strong Outperform, Outperform, Neutral, Underperform, and Strong Underperform. Leader, Strong, Weak, and Laggard are not classification labels. Those words imply a cross-sectional rank.
 
-Relative-strength direction, used only by the directional table:
+A later Market State Board may still show a separate Leaders / Laggards panel. That panel ranks enabled markets by the continuous `active_return_63` value, for example QQQ at +6.8 percent ahead of SPY at +2.7 percent. The ranking is not the five-way classification. ACWI is not ranked.
 
-| Relative-strength direction | States |
+Relative-performance direction, used only by the directional table:
+
+| Relative-performance direction | States |
 |---|---|
-| positive | Leader, Strong |
+| positive | Strong Outperform, Outperform |
 | neutral | Neutral |
-| negative | Weak, Laggard |
+| negative | Underperform, Strong Underperform |
 
-Leaders and laggards on the board are ordered by this continuous value, not by the category alone. ACWI is not ranked as a board card.
+### No risk adjustment
+
+V1 does not divide the active return by realised volatility, tracking error, or a standard deviation. It does not calculate an information ratio, a Sharpe ratio, or a regression alpha inside this instrument. Institutional momentum-factor methodologies may risk-adjust returns. Market Regime Monitor keeps the components separate:
+
+- Trend is structural direction.
+- Momentum is the market's own short and medium price pace.
+- Volatility is realised movement magnitude.
+- Benchmark Relative Performance is the benchmark-relative return.
+
+A later strategy or portfolio layer may combine or risk-adjust these quantities. V1 does not.
+
+### Distinct from Trend and Momentum
+
+The instruments are allowed to disagree. The disagreement is information.
+
+Momentum can be positive while Benchmark Relative Performance is Strong Underperform. An asset return of +5 percent over 63 sessions is positive on the asset's own path. If ACWI returned +10 percent, the active return is -5 percent. Momentum answers whether this market is moving positively or negatively on its own. Benchmark Relative Performance answers how it did versus ACWI.
+
+Trend can be Strong Up while the asset underperforms ACWI. The asset's own price structure can be bullish while the global-equity benchmark rose faster. The two readings are not forced into agreement.
+
+### History
+
+A 63-observation return needs the price at `t` and the price at `t-63`. Standalone Benchmark Relative Performance therefore needs 64 aligned observations for the asset and 64 aligned observations for ACWI. 63 observations are insufficient.
+
+The panel validator remains at 274 observations because the volatility regime is the longest current-state requirement. This design does not change that gate. The planned What Changed minimum remains 275.
+
+### As-of date
+
+At date `t`, the asset return uses `asset_t` and `asset_(t-63)`. The benchmark return uses `ACWI_t` and `ACWI_(t-63)`. No row after `t` may change the result. Both series must contain the exact as-of date, and the lagged observation must be the same date on both series. There is no nearest-date substitution, no future borrowing, no fill, and no interpolation. Future rows cannot be used to make 63 observations into 64.
+
+### Designed failure behaviour
+
+This contract is not implemented. Where an existing public code already means the failure, the future calculation reuses it. Two conditions need new codes, because no current code means either of them: the requested market is the benchmark, and a directly supplied active return is not a usable number. The second code is defined with the classifier below. Both codes are specified here and are not implemented.
+
+| Condition | Code |
+|---|---|
+| `benchmark_id` is not ACWI | `CONFIG_WRONG_BENCHMARK` |
+| The requested market is ACWI | `DATA_BENCHMARK_EXCLUDED` |
+| The requested market has no rows | `DATA_MISSING_MARKET` |
+| ACWI has no rows | `DATA_MISSING_MARKET` |
+| The as-of date is absent from the asset | `DATA_INVALID_DATE` |
+| The as-of date is absent from ACWI | `DATA_INVALID_DATE` |
+| A date is repeated on the asset or on ACWI | `DATA_DUPLICATE_DATE` |
+| The asset and ACWI date sets through the as-of date differ | `DATA_DATE_INDEX_MISMATCH` |
+| Fewer than 64 aligned observations through the as-of date | `DATA_INSUFFICIENT_HISTORY` |
+| An endpoint adjusted close is missing, non-finite, or not greater than 0 | `DATA_INVALID_PRICE` |
+
+The four endpoints are the asset and ACWI closes at `t` and at `t-63`. The panel validator already checks every price in the panel. The standalone calculation checks the endpoints it consumes. It does not replace the panel validator.
+
+`DATA_BENCHMARK_EXCLUDED` is proposed for this instrument and is not implemented. The message names ACWI. The code is not a classification label.
+
+### Designed API
+
+Not implemented. The two functions stay independent of Trend, Momentum, and Volatility.
+
+```text
+classify_relative_performance(active_return_63)
+calculate_relative_performance(prices, market_id, benchmark_id, as_of_date)
+```
+
+`classify_relative_performance` applies the five bands to one computed active return. `calculate_relative_performance` builds both 63-observation returns from aligned adjusted closes and then classifies their difference.
+
+The result is immutable. Its fields are:
+
+- `market_id`
+- `benchmark_id`
+- `as_of_date`
+- `adjusted_close`
+- `benchmark_adjusted_close`
+- `asset_return_63`
+- `benchmark_return_63`
+- `active_return_63`
+- `relative_performance_state`
+- `reason_code`
+
+Full precision is retained. There is no score, confidence, probability, predicted return, or position size, and there is no UI formatting in the result.
+
+`classify_relative_performance` is a predicate on one active return. It does not rebuild that return from prices. A negative value and a huge finite value are valid inputs and fall through the bands. A non-finite, boolean, string, or missing value fails closed. No existing code means "this active return is not a usable number," so the proposed code is `DATA_INVALID_ACTIVE_RETURN`. It is not implemented. A raw arithmetic exception must not escape.
+
+### Future benchmark-relative research
+
+These constructions are outside V1 and are not implemented.
+
+- 6-month benchmark-relative performance
+- 12-month benchmark-relative performance
+- one-month-lagged factor momentum
+- cross-sectional ranking or z-scores as the classification itself
+- risk-adjusted momentum
+- active return divided by tracking error
+- relative-price-ratio trend analysis
+
+Each of those answers a different question from the 63-observation arithmetic active return.
 
 ## Directional state
 
-Direction uses Trend, Momentum direction, and Relative-strength direction only. Volatility is excluded.
+Direction uses Trend, Momentum direction, and Benchmark Relative Performance direction only. Volatility is excluded.
 
 This is a decision table with a fixed precedence. It is not a sum, a weighted score, or a hidden composite.
 
 | Order | State | Rule | Reason code |
 |---:|---|---|---|
-| 1 | Strong Up | Trend == +2 and momentum direction is positive and relative-strength direction is positive | `STATE_STRONG_UP` |
-| 2 | Strong Down | Trend == -2 and momentum direction is negative and relative-strength direction is negative | `STATE_STRONG_DOWN` |
-| 3 | Up | Trend > 0 and at least one of momentum direction or relative-strength direction is positive | `STATE_UP` |
-| 4 | Down | Trend < 0 and at least one of momentum direction or relative-strength direction is negative | `STATE_DOWN` |
+| 1 | Strong Up | Trend == +2 and momentum direction is positive and relative-performance direction is positive | `STATE_STRONG_UP` |
+| 2 | Strong Down | Trend == -2 and momentum direction is negative and relative-performance direction is negative | `STATE_STRONG_DOWN` |
+| 3 | Up | Trend > 0 and at least one of momentum direction or relative-performance direction is positive | `STATE_UP` |
+| 4 | Down | Trend < 0 and at least one of momentum direction or relative-performance direction is negative | `STATE_DOWN` |
 | 5 | Neutral | every remaining combination | `STATE_NEUTRAL` |
 
 The first matching row wins. Rows 3 and 4 are reached only when rows 1 and 2 have not matched, which is the required exclusion of Strong Up from Up and of Strong Down from Down.
 
-Coverage of the 45 combinations (5 trend scores × 3 momentum directions × 3 relative-strength directions):
+Coverage of the 45 combinations (5 trend scores × 3 momentum directions × 3 relative-performance directions):
 
 | State | Combinations | Why there is no second match |
 |---|---:|---|
@@ -352,9 +473,9 @@ Coverage of the 45 combinations (5 trend scores × 3 momentum directions × 3 re
 | Strong Down | 1 | Trend is -2, so Strong Up, Up, and Neutral do not apply. The Down row is not reached. |
 | Up | 9 | Trend is +1 or +2, so Down and Strong Down do not apply. The one Strong Up combination was already taken. |
 | Down | 9 | Trend is -1 or -2, so Up and Strong Up do not apply. The one Strong Down combination was already taken. |
-| Neutral | 25 | Complement: 45 − 1 − 1 − 9 − 9. Includes Trend 0 with any confirmation, and a positive trend opposed by both non-positive momentum and relative strength. |
+| Neutral | 25 | Complement: 45 − 1 − 1 − 9 − 9. Includes Trend 0 with any confirmation, and a positive trend opposed by both non-positive momentum and non-positive relative performance. |
 
-A positive trend with negative momentum and negative relative strength is Neutral. It is not Up, because neither confirmation is positive, and it is not Strong Up. The mirror image, a negative trend with both confirmations positive, is Neutral.
+A positive trend with negative momentum and negative relative performance is Neutral. It is not Up, because neither confirmation is positive, and it is not Strong Up. The mirror image, a negative trend with both confirmations positive, is Neutral.
 
 These labels are state names. They are not buy or sell signals and they are not forecasts.
 
@@ -393,7 +514,7 @@ The sentence `No market-state change since previous session` is produced only wh
 - both the latest state and the previous state were calculated successfully
 - none of the five categorical states changed
 
-Those five states are the directional state, Trend, Momentum, Volatility, and Relative Strength. A difference in any of them is a categorical transition. Each transition names the instrument, the previous label, the new label, and the reason code.
+Those five states are the directional state, Trend, Momentum, Volatility, and Benchmark Relative Performance. A difference in any of them is a categorical transition. Each transition names the instrument, the previous label, the new label, and the reason code.
 
 This comparison is specified here and is not implemented. The running validator enforces 274 observations. The 275 What Changed minimum is not a validator gate.
 
@@ -425,7 +546,7 @@ same price data + same configuration + same evaluation_date = same output
 
 The approved full current state requires 274 valid price observations on the shared date index for every required series.
 
-The number is fixed by the volatility regime. RV21 at `t-252` needs the price at `t-273`, and the current price is at `t`, so the length is 274. Trend and Momentum need less history than that. A standalone RV21 needs 22 prices. The complete What Changed comparison needs 275.
+The number is fixed by the volatility regime. RV21 at `t-252` needs the price at `t-273`, and the current price is at `t`, so the length is 274. Trend needs 200 observations. Momentum needs 64. Standalone Benchmark Relative Performance needs 64 aligned observations on the asset and on ACWI, because the price at `t-63` is required. A standalone RV21 needs 22 prices. The complete What Changed comparison needs 275. The 64-observation relative-performance requirement does not change the 274 panel gate.
 
 The running validator rejects fewer than 274 observations with `DATA_INSUFFICIENT_HISTORY`. No partial state is published. 275 remains the What Changed minimum and is not enforced by the validator.
 
@@ -490,11 +611,11 @@ Finance classifications:
 - `VOLATILITY_NORMAL`
 - `VOLATILITY_ELEVATED`
 - `VOLATILITY_HIGH`
-- `RELATIVE_STRENGTH_LEADER`
-- `RELATIVE_STRENGTH_STRONG`
-- `RELATIVE_STRENGTH_NEUTRAL`
-- `RELATIVE_STRENGTH_WEAK`
-- `RELATIVE_STRENGTH_LAGGARD`
+- `RELATIVE_PERFORMANCE_STRONG_OUTPERFORM`
+- `RELATIVE_PERFORMANCE_OUTPERFORM`
+- `RELATIVE_PERFORMANCE_NEUTRAL`
+- `RELATIVE_PERFORMANCE_UNDERPERFORM`
+- `RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM`
 - `STATE_STRONG_UP`
 - `STATE_UP`
 - `STATE_NEUTRAL`
@@ -528,6 +649,11 @@ Phase 1A validation codes, all reachable from the validator:
 Specified for Volatility calculation, and not a regime label:
 
 - `DATA_INVALID_VOLATILITY`
+
+Specified for Benchmark Relative Performance, and not implemented:
+
+- `DATA_BENCHMARK_EXCLUDED`
+- `DATA_INVALID_ACTIVE_RETURN`
 
 Specified for the later What Changed phase, and not current behaviour:
 

@@ -15,7 +15,7 @@ A user understands the state of the configured markets in approximately 3–5 se
 The first screen answers, in order:
 
 1. What is the directional state of each market?
-2. Which of trend, momentum, and relative strength support that state, and is volatility calm or elevated?
+2. Which of trend, momentum, and relative performance support that state, and is volatility calm or elevated?
 3. What changed?
 
 ## Market State Board
@@ -26,7 +26,7 @@ Each card shows only:
 
 - asset name
 - directional state: Strong Up, Up, Neutral, Down, or Strong Down
-- four instrument readings: Trend, Momentum, Volatility, Relative Strength
+- four instrument readings: Trend, Momentum, Volatility, Relative Performance
 - a short reason line taken from the library reason code, not composed by the interface
 - data freshness for that asset
 
@@ -40,7 +40,7 @@ A single panel lists state transitions since the approved comparison horizon: as
 
 ## Leaders and laggards
 
-Leaders and laggards are the enabled board markets ordered by the continuous relative-strength value, the 63-day return minus the ACWI 63-day return. The category label is shown with that value. Ordering does not come from the category alone. ACWI is not a normal board card. The interface displays the library value and does not recompute it.
+Leaders and laggards are a separate ranking, not the five Benchmark Relative Performance labels. The panel orders enabled board markets by the continuous `active_return_63` value, the asset's 63-observation return minus the ACWI 63-observation return. An example order is QQQ +6.8 percent, SPY +2.7 percent, EWJ +1.4 percent, and EEM -4.8 percent. The classification label, such as Strong Outperform or Underperform, is shown with that value. Ordering does not come from the label alone. ACWI is not ranked. The interface displays the library value and does not recompute it.
 
 ## Freshness
 
@@ -50,7 +50,7 @@ The board shows the as-of date of the calculation and whether any asset failed s
 
 Selecting a card opens the explanation for that asset:
 
-- each instrument's measurements (for example the two momentum returns, the annualised volatility, the percentile, and the excess return)
+- each instrument's measurements (for example the two momentum returns, the annualised volatility, the percentile, and the 63-observation active return)
 - the rule that fired
 - the reason code
 - the prior label used by "What changed"

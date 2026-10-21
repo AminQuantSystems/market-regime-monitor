@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 1D — Realised Volatility instrument implemented.
+Phase 1E — Benchmark Relative Performance design approved; implementation not yet authorised.
 
 ## What exists
 
@@ -42,8 +42,8 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Validation: implemented
 - Trend: implemented
 - Momentum: implemented
-- Volatility: implemented. RV21 uses 21 zero-mean log returns and annualises with 252. The regime percentile is the midrank `100 * (L + 0.5 * E) / 252`. A history in which every RV21 equals today's value is percentile 50 and Normal.
-- Relative Strength: not implemented
+- Volatility: implemented. RV21 uses 21 zero-mean log returns and annualises with 252. The regime percentile is `100 * (L + 0.5 * E) / 252`, a Market Regime Monitor half-weight tie convention. A history in which every RV21 equals today's value is percentile 50 and Normal.
+- Benchmark Relative Performance: DESIGN APPROVED — NOT IMPLEMENTED. The measure is the 63-observation active return, asset return minus the ACWI return. The labels are Strong Outperform, Outperform, Neutral, Underperform, and Strong Underperform.
 - Directional market state: not implemented
 - What Changed: not implemented
 - UI: not implemented
@@ -64,4 +64,4 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 
 ## Next approved action
 
-Stop after Phase 1D. Do not implement Relative Strength, directional state, What Changed, or UI until that work is authorised.
+Stop after the Phase 1E design. Do not implement Benchmark Relative Performance, directional state, What Changed, or UI until that work is authorised.

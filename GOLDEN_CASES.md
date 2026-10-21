@@ -1,6 +1,6 @@
 # Golden acceptance cases
 
-**Status:** Trend cases below are the hand-checked inputs for `tests/test_trend.py`. Momentum cases are the hand-checked inputs for `tests/test_momentum.py`. Volatility cases are the hand-checked inputs for `tests/test_volatility.py`.
+**Status:** Trend cases below are the hand-checked inputs for `tests/test_trend.py`. Momentum cases are the hand-checked inputs for `tests/test_momentum.py`. Volatility cases are the hand-checked inputs for `tests/test_volatility.py`. Benchmark Relative Performance cases are design only. They do not yet have tests.
 
 Each case is constructed so the expected result can be checked by hand. Price comparisons use the approved exact rules, with no epsilon. Unless a case says otherwise, ACWI's 63-observation return is 0, and only the named prices differ from a flat series.
 
@@ -347,39 +347,157 @@ At 274 prices the current full state can be calculated, and the previous full st
 
 At 275 prices both states can be calculated. A constant `adjusted_close` of 100 across those 275 dates keeps every category unchanged, including Volatility Normal, so that sentence is allowed only in that complete comparison.
 
-## 10. Relative-strength boundaries
+## 10. Benchmark Relative Performance
 
-ACWI prices of 100 at `t` and 100 at `t-63` make `ACWI_R63 = 0`. The asset difference then equals the asset's own R63.
+Design only. These cases do not have tests. The earlier formal labels Leader, Strong, Weak, and Laggard are withdrawn. The classification labels are Strong Outperform, Outperform, Neutral, Underperform, and Strong Underperform.
 
-| Asset price at `t` | Asset price at `t-63` | Difference | Expected state | Reason code |
-|---:|---:|---:|---|---|
-| 105 | 100 | +0.05 | Leader | `RELATIVE_STRENGTH_LEADER` |
-| 104.9 | 100 | +0.049 | Strong | `RELATIVE_STRENGTH_STRONG` |
-| 102 | 100 | +0.02 | Strong | `RELATIVE_STRENGTH_STRONG` |
-| 100 | 100 | 0 | Neutral | `RELATIVE_STRENGTH_NEUTRAL` |
-| 98 | 100 | -0.02 | Weak | `RELATIVE_STRENGTH_WEAK` |
-| 95.1 | 100 | -0.049 | Weak | `RELATIVE_STRENGTH_WEAK` |
-| 95 | 100 | -0.05 | Laggard | `RELATIVE_STRENGTH_LAGGARD` |
+Each return is the simple 63-observation adjusted-close return. Active return is the asset return minus the ACWI return. Classification uses that computed difference. There is no epsilon and no rounding before the comparison. In the price rows, both series are 100 at `t-63`. The active return in real arithmetic is then `(asset price at t - ACWI price at t) / 100`. The stored measurement keeps full precision.
 
-The continuous value, not only the category, is the ranking input for leaders and laggards.
+A separate Leaders / Laggards panel, if built later, ranks enabled markets by the continuous active return. That ranking is not these five labels.
+
+### 10a. Strong Outperform
+
+Asset return +10 percent, from 110 at `t` and 100 at `t-63`. ACWI return +4 percent, from 104 and 100. Active return +6 percent.
+
+Expected: Strong Outperform, `RELATIVE_PERFORMANCE_STRONG_OUTPERFORM`.
+
+### 10b. Exact +5 percent
+
+Asset return +10 percent, from 110 and 100. ACWI return +5 percent, from 105 and 100. Active return +5 percent.
+
+Expected: Strong Outperform, `RELATIVE_PERFORMANCE_STRONG_OUTPERFORM`. +0.05 is the closed upper boundary.
+
+### 10c. Outperform
+
+Asset return +6 percent, from 106 and 100. ACWI return +3 percent, from 103 and 100. Active return +3 percent.
+
+Expected: Outperform, `RELATIVE_PERFORMANCE_OUTPERFORM`.
+
+### 10d. Exact +2 percent
+
+Asset return +5 percent, from 105 and 100. ACWI return +3 percent, from 103 and 100. Active return +2 percent.
+
+Expected: Outperform, `RELATIVE_PERFORMANCE_OUTPERFORM`. +0.02 is the closed lower boundary of Outperform.
+
+### 10e. Neutral, asset ahead
+
+Asset return +4 percent, from 104 and 100. ACWI return +3 percent, from 103 and 100. Active return +1 percent.
+
+Expected: Neutral, `RELATIVE_PERFORMANCE_NEUTRAL`.
+
+### 10f. Exact zero
+
+Asset return +3 percent and ACWI return +3 percent. Both series use 103 at `t` and 100 at `t-63`. The two returns are the same number, so the active return is exactly 0.
+
+Expected: Neutral, `RELATIVE_PERFORMANCE_NEUTRAL`.
+
+### 10g. Neutral, asset behind
+
+Asset return +2 percent, from 102 and 100. ACWI return +3 percent, from 103 and 100. Active return -1 percent.
+
+Expected: Neutral, `RELATIVE_PERFORMANCE_NEUTRAL`.
+
+### 10h. Exact -2 percent
+
+Asset return +1 percent, from 101 and 100. ACWI return +3 percent, from 103 and 100. Active return -2 percent.
+
+Expected: Underperform, `RELATIVE_PERFORMANCE_UNDERPERFORM`. -0.02 is the closed upper boundary of Underperform.
+
+### 10i. Underperform
+
+Asset return 0 percent, from 100 and 100. ACWI return +3 percent, from 103 and 100. Active return -3 percent.
+
+Expected: Underperform, `RELATIVE_PERFORMANCE_UNDERPERFORM`.
+
+### 10j. Exact -5 percent
+
+Asset return -2 percent, from 98 and 100. ACWI return +3 percent, from 103 and 100. Active return -5 percent.
+
+Expected: Strong Underperform, `RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM`. -0.05 is the closed boundary.
+
+### 10k. Strong Underperform
+
+Asset return -5 percent, from 95 and 100. ACWI return +3 percent, from 103 and 100. Active return -8 percent.
+
+Expected: Strong Underperform, `RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM`.
+
+### 10l. Both negative, asset ahead of the benchmark
+
+Asset return -2 percent, from 98 and 100. ACWI return -8 percent, from 92 and 100. Active return +6 percent.
+
+Expected: Strong Outperform, `RELATIVE_PERFORMANCE_STRONG_OUTPERFORM`.
+
+The asset fell. It still outperformed ACWI. Benchmark Relative Performance is not the absolute direction of the market.
+
+### 10m. Both positive, asset behind the benchmark
+
+Asset return +5 percent, from 105 and 100. ACWI return +10 percent, from 110 and 100. Active return -5 percent.
+
+Expected: Strong Underperform, `RELATIVE_PERFORMANCE_STRONG_UNDERPERFORM`.
+
+The asset rose. It still underperformed ACWI. Momentum can remain positive on the asset's own return. There is no requirement that the two instruments agree.
+
+### 10n. 64 observations accepted
+
+The asset and ACWI share the same 64 dates through the as-of date, with a finite positive adjusted close on every consumed endpoint. The return uses the last close and the close 63 observations earlier.
+
+Expected once the instrument exists: the calculation succeeds.
+
+### 10o. 63 observations rejected
+
+The same two series, aligned, with 63 observations through the as-of date.
+
+Expected: `DATA_INSUFFICIENT_HISTORY`. The price at `t-63` does not exist. No relative-performance label is published. The panel validator's 274 gate is a separate rule and is unchanged.
+
+### 10p. Exact as-of date
+
+The requested date is missing from the asset, or missing from ACWI, or is a neighbouring date that does exist.
+
+Expected: `DATA_INVALID_DATE`. The calculation does not move to the nearest date.
+
+### 10q. Future observations ignored
+
+Rows dated after the as-of date are present, including extreme adjusted closes. The history through the as-of date is otherwise valid.
+
+Expected: those later rows do not change either return, the active return, the state, or the reason code. A 63-observation prefix plus future rows is still `DATA_INSUFFICIENT_HISTORY`. Future rows are not borrowed to complete the 64.
+
+### 10r. Another market does not contaminate the pair
+
+The frame also contains another market with extreme adjusted closes. The requested asset and ACWI are unchanged.
+
+Expected: the other market does not change the asset return, the ACWI return, the active return, the state, or the reason code.
+
+### 10s. Caller input is not mutated
+
+The same frame is used for a successful calculation and for a failing one.
+
+Expected: the caller's rows are unchanged in both cases.
+
+### 10t. Deterministic repeat
+
+The same prices, asset, benchmark, and as-of date are calculated twice.
+
+Expected: the two results are identical.
+
+A request whose market is ACWI fails with `DATA_BENCHMARK_EXCLUDED` and does not return Neutral. A `benchmark_id` other than ACWI fails with `CONFIG_WRONG_BENCHMARK`. A missing asset or a missing ACWI fails with `DATA_MISSING_MARKET`. Date sets that differ through the as-of date fail with `DATA_DATE_INDEX_MISMATCH`. A duplicate date fails with `DATA_DUPLICATE_DATE`. An invalid endpoint adjusted close fails with `DATA_INVALID_PRICE`.
 
 ## 11. Strong Up
 
-Trend +2, Momentum Accelerating, Relative Strength Leader.
+Trend +2, Momentum Accelerating, Benchmark Relative Performance Strong Outperform.
 
 Expected: Strong Up, `STATE_STRONG_UP`. Volatility may be any regime and must not change this result.
 
 ## 12. Up with conflicting confirmation
 
-Trend +2, Momentum Deteriorating, Relative Strength Leader.
+Trend +2, Momentum Deteriorating, Benchmark Relative Performance Strong Outperform.
 
-Momentum direction is negative. Relative-strength direction is positive. Strong Up fails because momentum is not positive. Up matches because the trend is positive and relative strength is positive.
+Momentum direction is negative. Relative-performance direction is positive. Strong Up fails because momentum is not positive. Up matches because the trend is positive and relative performance is positive.
 
 Expected: Up, `STATE_UP`.
 
 ## 13. Neutral because a positive trend is opposed by both confirmations
 
-Trend +2, Momentum Negative, Relative Strength Laggard.
+Trend +2, Momentum Negative, Benchmark Relative Performance Strong Underperform.
 
 Both confirmation directions are negative. Up fails because neither is positive. Strong Up fails for the same reason. The trend is not negative, so Down and Strong Down fail.
 
@@ -387,15 +505,15 @@ Expected: Neutral, `STATE_NEUTRAL`.
 
 ## 14. Strong Down
 
-Trend -2, Momentum Negative, Relative Strength Laggard.
+Trend -2, Momentum Negative, Benchmark Relative Performance Strong Underperform.
 
 Expected: Strong Down, `STATE_STRONG_DOWN`. Volatility must not change this result.
 
 ## 15. Down with conflicting confirmation
 
-Trend -2, Momentum Positive, Relative Strength Weak.
+Trend -2, Momentum Positive, Benchmark Relative Performance Underperform.
 
-Strong Down fails because momentum is not negative. Down matches because the trend is negative and relative strength is negative.
+Strong Down fails because momentum is not negative. Down matches because the trend is negative and relative performance is negative.
 
 Expected: Down, `STATE_DOWN`.
 
@@ -419,7 +537,7 @@ Every required series is a constant `adjusted_close` of 100 across all 275 dates
 
 Expected once What Changed exists: both states are calculated, every categorical label is unchanged, and the comparison text is exactly `No market-state change since previous session`.
 
-On this constant panel the labels on both dates are Trend score 0, Momentum Mixed, Volatility Normal, Relative Strength Neutral, and directional state Neutral. Volatility is Normal because every RV21 is 0, `L = 0`, `E = 252`, and the percentile is 50.
+On this constant panel the labels on both dates are Trend score 0, Momentum Mixed, Volatility Normal, Benchmark Relative Performance Neutral, and directional state Neutral. The active return is 0 because every market, including ACWI, is unchanged. Volatility is Normal because every RV21 is 0, `L = 0`, `E = 252`, and the percentile is 50.
 
 ## 17. 273 and 272 observations rejected
 
@@ -471,7 +589,7 @@ These are not extra regimes. They lock the remaining approved error codes.
 
 The required enabled board markets are SPY, QQQ, IWM, EWU, EWG, EWJ, and EEM. Each uses `benchmark_id = ACWI` and `enabled = True`.
 
-ACWI is mandatory. Its `benchmark_id` is `ACWI` and its `enabled` value is `False`. That self-reference keeps the schema uniform. ACWI relative strength is not a board-market result.
+ACWI is mandatory. Its `benchmark_id` is `ACWI` and its `enabled` value is `False`. That self-reference keeps the schema uniform. ACWI does not receive a Benchmark Relative Performance classification against itself.
 
 Every configured market, including a disabled extra market, uses `benchmark_id = ACWI`.
 

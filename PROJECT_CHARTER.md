@@ -6,7 +6,7 @@
 
 ## Product definition
 
-Market Regime Monitor is a deterministic market-regime and relative-strength scanner.
+Market Regime Monitor is a deterministic market-regime scanner. One of its four instruments is Benchmark Relative Performance against ACWI.
 
 A user should be able to understand the state of a group of financial markets within approximately 3–5 seconds, without interpreting a conventional multi-line technical-analysis chart.
 
@@ -17,7 +17,7 @@ Communicate, for each configured market and for the group:
 - whether the prevailing trend is aligned up, aligned down, or not fully aligned
 - whether shorter-horizon and medium-horizon momentum agree, conflict, or are deteriorating
 - whether realised volatility is low, normal, elevated, or high relative to that asset's own history
-- whether the asset is leading or lagging a configured benchmark
+- whether the asset is outperforming or underperforming ACWI over 63 trading observations
 - what changed since the previous observation
 
 Every displayed state must be explainable from named inputs, named rules, and a reason code. The same validated input must always produce the same output.
@@ -29,11 +29,11 @@ V1 focuses only on:
 - trend
 - momentum
 - realised volatility
-- relative strength
+- benchmark relative performance
 - state transitions ("What changed?")
 - deterministic explainability
 
-V1 reads local, validated historical price data. It does not depend on a live market-data API. No production market-data vendor is selected. The approved V1 universe is the US-listed proxy set in `FINANCE_SPEC.md`: SPY, QQQ, IWM, EWU, EWG, EWJ and EEM, with ACWI as the relative-strength benchmark. Direct global-index feeds and FX are later extensions, not V1.
+V1 reads local, validated historical price data. It does not depend on a live market-data API. No production market-data vendor is selected. The approved V1 universe is the US-listed proxy set in `FINANCE_SPEC.md`: SPY, QQQ, IWM, EWU, EWG, EWJ and EEM, with ACWI as the benchmark for Benchmark Relative Performance. Direct global-index feeds and FX are later extensions, not V1.
 
 The interface displays results. It does not calculate them.
 

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "market-regime-monitor"
-version = "0.1.0"
-description = "Deterministic market-regime and relative-strength scanner."
+version = "1.0.0"
+description = "Deterministic market-state analytics across major equity markets using transparent trend, momentum, realised-volatility and benchmark-relative measures."
 requires-python = ">=3.11"
 dependencies = [
     "pandas>=2.2",

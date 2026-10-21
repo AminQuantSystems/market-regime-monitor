@@ -1,6 +1,6 @@
 # Interface concept
 
-**Status:** design specified. The branded board, row selection, and detail panel are implemented as described in `PROJECT_STATE.md`. Visual tokens are in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`.
+**Status:** design specified. The branded board, row selection, detail panel, CSV upload controls, and Return to Demo are implemented as described in `PROJECT_STATE.md`. Visual tokens are in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`.
 
 ## Intent
 

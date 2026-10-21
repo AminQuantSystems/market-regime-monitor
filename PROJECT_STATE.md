@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 2D — branded selectable Market State Board and analytical detail panel implemented.
+Phase 2E — CSV upload and Return to Demo workflow implemented.
 
 ## What exists
 
@@ -56,7 +56,7 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Market Regime Snapshot: implemented and integrity-hardened. It assembles `TrendResult`, `MomentumResult`, `VolatilityResult`, and `RelativePerformanceResult` for one selected market and one as-of date. It does not call full-board validation. A component identity that contradicts the request fails with `MarketRegimeError` and `REGIME_COMPONENT_MISMATCH`. Direction is `trend.trend_state`. No composite directional regime exists. This assembly is not independent bank model validation or regulatory approval.
 - What Changed: implemented. It compares the four categorical labels on the current snapshot and the immediately previous observation. Statuses are `CHANGED`, `UNCHANGED`, and `UNAVAILABLE`. It calculates no finance.
 - Finance and monitoring core: frozen
-- Tests: 319 passed. The original 309 finance and monitoring tests are unchanged and passing. Ten adapter tests cover the weekday demonstration contract.
+- Tests: 320 passed. The original 309 finance and monitoring tests are unchanged and passing. Eleven adapter tests cover the weekday demonstration contract and same-bytes demo/upload finance equivalence.
 - MEEM production brand palette: locked
 - MEEM Toolkit Design System: v1.0 specified
 - Original finance tests: 309 passed
@@ -64,7 +64,8 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Synthetic demo: weekday-only, implemented. 275 Monday–Friday observations from 2025-02-17 through 2026-03-06. No exchange calendar.
 - Official MEEM mark: implemented
 - CSV upload API boundary: implemented
-- CSV upload UI: not implemented
+- CSV upload user experience: implemented
+- Return to Demo: implemented
 - Frontend: React, TypeScript, and Vite implemented
 - MEEM design-token adapter: implemented
 - Application shell: implemented
@@ -96,10 +97,18 @@ One local measurement on 21 October 2026, Python 3.14, this Windows machine: ass
 
 ## Deferred findings
 
-- DEFERRED LOW-PRIORITY PUBLIC-API HARDENING. The production calculation path creates snapshots through the integrity-hardened snapshot API. The lower-level pure comparator does not independently re-check malformed nested component identity on a manually constructed snapshot. This waits for a pre-publication phase. `change.py` was not altered in Phase 2A, Phase 2B, Phase 2C, or Phase 2D.
+- DEFERRED LOW-PRIORITY PUBLIC-API HARDENING. The production calculation path creates snapshots through the integrity-hardened snapshot API. The lower-level pure comparator does not independently re-check malformed nested component identity on a manually constructed snapshot. This waits for a pre-publication phase. `change.py` was not altered in Phase 2A, Phase 2B, Phase 2C, Phase 2D, or Phase 2E.
 - DEFERRED API CONTRACT HARDENING. Categorical fields on the Pydantic response models remain plain strings. The frontend unions are closed. Tighten the Python literals before publication.
-- DEFERRED API ERROR-ENVELOPE HARDENING. A form submission that omits `evaluation_date` or `as_of_date` still returns FastAPI's default 422 `detail` body. The project error envelope is unchanged. This is outside the detail panel and waits for pre-publication work.
+- DEFERRED API ERROR-ENVELOPE HARDENING. A form submission that omits `evaluation_date` or `as_of_date` still returns FastAPI's default 422 `detail` body. The project error envelope is unchanged. This waits for pre-publication work.
+
+## Scheduled for Phase 2F
+
+These Phase 2D findings were not changed in Phase 2E:
+
+- The MEEM mark renders at 28 × 50 px and is slightly tall beside the title.
+- What Changed sits below the fold on common laptop heights.
+- Trend Score stays in the API and in the detail panel. The later polish is to hide it from the public V1 UI without removing it from the API.
 
 ## Next approved action
 
-Stop after Phase 2D. Do not implement charts, upload controls, or live data until that work is authorised.
+Stop after Phase 2E. Do not begin Phase 2F, charts, or live data until that work is authorised.

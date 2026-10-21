@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 2C — first end-to-end Market State Board vertical slice implemented.
+Phase 2D — branded selectable Market State Board and analytical detail panel implemented.
 
 ## What exists
 
@@ -55,20 +55,23 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Benchmark Relative Performance: implemented and numerically hardened. The measure is the 63-observation active return against ACWI, the common V1 comparison benchmark. Classification treats a value within `1e-12` of +0.05, +0.02, -0.02, or -0.05 as that threshold. The stored active return stays at full precision. ACWI is not the mandate-specific benchmark for every regional market.
 - Market Regime Snapshot: implemented and integrity-hardened. It assembles `TrendResult`, `MomentumResult`, `VolatilityResult`, and `RelativePerformanceResult` for one selected market and one as-of date. It does not call full-board validation. A component identity that contradicts the request fails with `MarketRegimeError` and `REGIME_COMPONENT_MISMATCH`. Direction is `trend.trend_state`. No composite directional regime exists. This assembly is not independent bank model validation or regulatory approval.
 - What Changed: implemented. It compares the four categorical labels on the current snapshot and the immediately previous observation. Statuses are `CHANGED`, `UNCHANGED`, and `UNAVAILABLE`. It calculates no finance.
-- Finance and monitoring core: frozen for V1 UI work
-- Tests: 319 passed. The original 309 finance and monitoring tests are unchanged and passing. Ten adapter tests were added.
+- Finance and monitoring core: frozen
+- Tests: 319 passed. The original 309 finance and monitoring tests are unchanged and passing. Ten adapter tests cover the weekday demonstration contract.
 - MEEM production brand palette: locked
 - MEEM Toolkit Design System: v1.0 specified
-- Original finance tests: 309 passed, and the suite remains green with the adapter tests
-- FastAPI adapter: first slice implemented
-- Demo source: implemented
+- Original finance tests: 309 passed
+- FastAPI adapter: implemented
+- Synthetic demo: weekday-only, implemented. 275 Monday–Friday observations from 2025-02-17 through 2026-03-06. No exchange calendar.
+- Official MEEM mark: implemented
 - CSV upload API boundary: implemented
+- CSV upload UI: not implemented
 - Frontend: React, TypeScript, and Vite implemented
 - MEEM design-token adapter: implemented
 - Application shell: implemented
 - Market State Board: implemented
-- Detail panel: not implemented
-- Row selection: not implemented
+- Market row selection: implemented
+- Market Detail Panel: implemented
+- What Changed detail: implemented
 - Charts: not implemented
 - Live or vendor market data: not implemented
 - Backtesting: not implemented
@@ -91,10 +94,12 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 
 One local measurement on 21 October 2026, Python 3.14, this Windows machine: assembling snapshots for SPY, QQQ, IWM, EWU, EWG, EWJ, and EEM from one synthetic 274-observation panel took 0.22 seconds. The same seven markets, each with What Changed, on one synthetic 275-observation panel took 0.32 seconds. The panel also contained ACWI. Both figures are diagnostic evidence only. They are not pass/fail limits. This workload provides no evidence that Mac offload is justified. No concurrency and no multiprocessing have been added. A later Mac measurement may matter for a large historical backtest, a parameter sweep, a scenario grid, or another large multi-period research workload. It is not relevant to the current seven-market snapshot or What Changed comparison.
 
-## Deferred finding
+## Deferred findings
 
-The production calculation path creates snapshots through the integrity-hardened snapshot API. The lower-level pure comparator does not independently re-check malformed nested component identity on a manually constructed snapshot. This is deferred low-priority public-API hardening for a future pre-publication phase. It is not a UI blocker. `change.py` was not altered in Phase 2A or Phase 2B.
+- DEFERRED LOW-PRIORITY PUBLIC-API HARDENING. The production calculation path creates snapshots through the integrity-hardened snapshot API. The lower-level pure comparator does not independently re-check malformed nested component identity on a manually constructed snapshot. This waits for a pre-publication phase. `change.py` was not altered in Phase 2A, Phase 2B, Phase 2C, or Phase 2D.
+- DEFERRED API CONTRACT HARDENING. Categorical fields on the Pydantic response models remain plain strings. The frontend unions are closed. Tighten the Python literals before publication.
+- DEFERRED API ERROR-ENVELOPE HARDENING. A form submission that omits `evaluation_date` or `as_of_date` still returns FastAPI's default 422 `detail` body. The project error envelope is unchanged. This is outside the detail panel and waits for pre-publication work.
 
 ## Next approved action
 
-Stop after Phase 2C. Do not implement the detail panel, charts, or live data until that work is authorised.
+Stop after Phase 2D. Do not implement charts, upload controls, or live data until that work is authorised.

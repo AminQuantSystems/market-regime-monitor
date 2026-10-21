@@ -1,6 +1,6 @@
 # Interface concept
 
-**Status:** design specified. The first board slice is implemented as described in `UI_ARCHITECTURE.md` and `PROJECT_STATE.md`. The detail panel is not implemented. Visual tokens are in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`.
+**Status:** design specified. The branded board, row selection, and detail panel are implemented as described in `PROJECT_STATE.md`. Visual tokens are in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`.
 
 ## Intent
 
@@ -114,7 +114,7 @@ Volatility is not a directional judgement. Low and Normal are neutral. Elevated 
 
 ## Change column
 
-What Changed is implemented in the library. The screen that presents it is not implemented. The column is presentation only. The finance model does not store these glyphs.
+What Changed is implemented in the library. The board column and the detail section present it. The column glyphs are presentation only. The finance model does not store these glyphs.
 
 | Status | Cell |
 |---|---|

@@ -1,0 +1,102 @@
+.panel {
+  background: var(--meem-dark-surface-1);
+  border: 1px solid var(--meem-dark-border-subtle);
+  border-radius: 2px;
+  padding: 16px;
+}
+
+.kicker,
+.sectionLabel,
+.dimension {
+  margin: 0;
+  color: var(--meem-dark-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.name {
+  margin: 8px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ticker,
+.asOf,
+.note,
+.statement {
+  margin: 4px 0 0;
+  color: var(--meem-dark-text-secondary);
+  font-size: 12px;
+}
+
+.ticker {
+  color: var(--meem-dark-text-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--meem-dark-border-subtle);
+}
+
+.state {
+  margin-top: 8px;
+}
+
+.metrics {
+  display: grid;
+  gap: 4px 12px;
+  margin: 8px 0 0;
+}
+
+.metrics div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.metrics dt {
+  color: var(--meem-dark-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.metrics dd {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: right;
+}
+
+.reason {
+  margin: 8px 0 0;
+  color: var(--meem-dark-text-muted);
+  font-family: Consolas, "Segoe UI", monospace;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.transitions {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transitions li + li {
+  margin-top: 8px;
+}
+
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+}
+
+.arrow {
+  color: var(--meem-dark-text-muted);
+}

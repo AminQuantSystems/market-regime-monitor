@@ -6,7 +6,13 @@ import styles from "./MarketStateBoard.module.css"
 
 const WIDTHS = ["24%", "15%", "18%", "11%", "22%", "10%"]
 
-export function MarketStateBoard({ markets }: { markets: MarketReading[] }) {
+interface MarketStateBoardProps {
+  markets: MarketReading[]
+  selectedId: string
+  onSelect: (marketId: string) => void
+}
+
+export function MarketStateBoard({ markets, selectedId, onSelect }: MarketStateBoardProps) {
   return (
     <div className={styles.wrap}>
       <table className={styles.table}>
@@ -27,10 +33,17 @@ export function MarketStateBoard({ markets }: { markets: MarketReading[] }) {
         </thead>
         <tbody>
           {markets.map((market) => (
-            <tr key={market.market_id}>
+            <tr key={market.market_id} data-selected={market.market_id === selectedId ? "true" : "false"}>
               <th scope="row">
-                <span className={styles.market}>{market.display_name}</span>
-                <span className={styles.ticker}>{market.market_id}</span>
+                <button
+                  type="button"
+                  className={styles.select}
+                  aria-pressed={market.market_id === selectedId}
+                  aria-controls="market-detail"
+                  onClick={() => onSelect(market.market_id)}
+                >
+                  <span className={styles.market}>{market.display_name}</span> <span className={styles.ticker}>{market.market_id}</span>
+                </button>
               </th>
               <td>
                 <StateCell label={market.current.trend.trend_state} presentation={presentTrend(market.current.trend.trend_state)} />

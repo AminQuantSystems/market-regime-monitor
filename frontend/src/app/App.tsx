@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { analyseBoard, AnalysisError } from "../api/client"
 import { ApplicationHeader } from "../components/ApplicationHeader"
+import { MarketDetailPanel } from "../components/MarketDetailPanel"
 import { MarketStateBoard } from "../components/MarketStateBoard"
 import { ValidationErrorState } from "../components/ValidationErrorState"
 import { DEMO_AS_OF_DATE, DEMO_EVALUATION_DATE, DEMO_LABEL } from "../demo"
@@ -14,6 +15,7 @@ type LoadState =
 
 export function App() {
   const [state, setState] = useState<LoadState>({ phase: "loading" })
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -43,6 +45,7 @@ export function App() {
   }, [])
 
   const board = state.phase === "ready" ? state.board : null
+  const selected = board?.markets.find((market) => market.market_id === selectedId) ?? board?.markets[0] ?? null
   return (
     <main className={styles.shell}>
       <ApplicationHeader
@@ -53,7 +56,12 @@ export function App() {
       />
       {state.phase === "loading" ? <p className={styles.status} role="status">ANALYSING MARKET STATE…</p> : null}
       {state.phase === "error" ? <ValidationErrorState code={state.code} message={state.message} /> : null}
-      {board ? <MarketStateBoard markets={board.markets} /> : null}
+      {board && selected ? (
+        <div className={styles.workspace}>
+          <MarketStateBoard markets={board.markets} selectedId={selected.market_id} onSelect={setSelectedId} />
+          <MarketDetailPanel market={selected} />
+        </div>
+      ) : null}
     </main>
   )
 }

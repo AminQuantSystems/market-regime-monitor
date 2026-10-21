@@ -10,10 +10,19 @@ interface ApplicationHeaderProps {
 export function ApplicationHeader({ asOfDate, universeSize, dataLabel, validationStatus }: ApplicationHeaderProps) {
   return (
     <header className={styles.header}>
-      <div>
-        <p className={styles.product}>MARKET REGIME MONITOR</p>
-        {dataLabel ? <p className={styles.demo}>{dataLabel}</p> : null}
-        {dataLabel ? <p className={styles.note}>Synthetic demonstration. Not a live feed.</p> : null}
+      <div className={styles.brand}>
+        <img
+          className={styles.mark}
+          src="/brand/MEEM_Standalone_Mark_White.png"
+          alt="MEEM Technologies"
+          width={263}
+          height={469}
+        />
+        <div>
+          <p className={styles.product}>MARKET REGIME MONITOR</p>
+          {dataLabel ? <p className={styles.demo}>{dataLabel}</p> : null}
+          {dataLabel ? <p className={styles.note}>Synthetic demonstration. Not a live feed.</p> : null}
+        </div>
       </div>
       <dl className={styles.context}>
         <div className={styles.fact}>

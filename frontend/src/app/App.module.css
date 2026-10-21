@@ -4,6 +4,20 @@
   padding: 16px;
 }
 
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(280px, 3fr);
+  gap: 16px;
+  align-items: start;
+  margin-top: 12px;
+}
+
+@media (max-width: 1240px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .status {
   margin: 16px 0 0;
   color: var(--meem-dark-text-secondary);

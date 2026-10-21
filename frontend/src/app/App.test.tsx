@@ -25,13 +25,13 @@ describe("Market State Board", () => {
     expect(headings).toEqual(["MARKET", "DIRECTION", "MOMENTUM", "VOL", "RELATIVE", "CHANGE"])
     const markets = screen.getAllByRole("rowheader").map((cell) => cell.textContent)
     expect(markets).toEqual([
-      "S&P 500SPY",
-      "Nasdaq 100QQQ",
-      "Russell 2000IWM",
-      "UK EquitiesEWU",
-      "Germany EquitiesEWG",
-      "Japan EquitiesEWJ",
-      "Emerging MarketsEEM",
+      "S&P 500 SPY",
+      "Nasdaq 100 QQQ",
+      "Russell 2000 IWM",
+      "UK Equities EWU",
+      "Germany Equities EWG",
+      "Japan Equities EWJ",
+      "Emerging Markets EEM",
     ])
     expect(screen.queryByRole("rowheader", { name: /ACWI/ })).not.toBeInTheDocument()
     expect(screen.getAllByText("Strong Up").length).toBeGreaterThan(0)
@@ -47,7 +47,7 @@ describe("Market State Board", () => {
     expect(screen.getByText("DEMO DATA")).toBeInTheDocument()
     expect(screen.getByText("VALID")).toBeInTheDocument()
     expect(screen.getByText("2026-03-01")).toBeInTheDocument()
-    const text = document.body.textContent ?? ""
+    const text = screen.getByRole("table").textContent ?? ""
     for (const hidden of hiddenMeasurements) {
       expect(text).not.toContain(hidden)
     }

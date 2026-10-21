@@ -1,5 +1,4 @@
 .wrap {
-  margin-top: 12px;
   overflow-x: auto;
   background: var(--meem-dark-surface-1);
   border: 1px solid var(--meem-dark-border-subtle);
@@ -40,6 +39,33 @@
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
+}
+
+.table tr[data-selected="true"] th,
+.table tr[data-selected="true"] td {
+  background: var(--meem-dark-surface-2);
+}
+
+.table tr[data-selected="true"] th {
+  box-shadow: inset 2px 0 0 var(--meem-dark-accent-accessible);
+}
+
+.select {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--meem-dark-accent-accessible);
+  outline-offset: -2px;
 }
 
 .market {

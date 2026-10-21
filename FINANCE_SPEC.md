@@ -1,7 +1,7 @@
 # Finance specification — approved V1 model
 
 **Status:** owner-approved V1 finance rules.
-Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D approves the Volatility design and does not implement it. Relative strength, directional state, and What Changed are specified here and are not implemented.
+Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D implements realised volatility. Relative strength, directional state, and What Changed are specified here and are not implemented.
 
 These rules replace the provisional Phase 0 proposal. Comparisons are exact. The financial definition uses no tolerance and no epsilon.
 
@@ -121,7 +121,7 @@ P21 versus P63 decides whether pace is strengthening or weakening. G(n) is the e
 
 The calculation uses only the requested market on or before the exact as-of date. A missing date is not replaced by a neighbour. Later rows are ignored and are not borrowed to meet the history minimum.
 
-`price_(t-63)` is 63 observations before `t`, so the Momentum unit needs at least 64 observations through the as-of date. 63 observations fail with `DATA_INSUFFICIENT_HISTORY`. The running market-data validator still requires 273 observations. The approved full-state minimum becomes 274 when Volatility is integrated. That validator change is not in the running code.
+`price_(t-63)` is 63 observations before `t`, so the Momentum unit needs at least 64 observations through the as-of date. 63 observations fail with `DATA_INSUFFICIENT_HISTORY`. The market-data validator requires 274 observations for a full current state. Momentum's own unit minimum remains 64.
 
 `classify_momentum` is a predicate on four pre-calculated numbers. Each return and its pace are expected to come from the same positive price ratio. The predicate does not recompute a ratio and does not reject a finite tuple that could not have come from one ratio. `calculate_momentum` is the normal public path. It builds both pairs from the same positive adjusted closes.
 
@@ -158,7 +158,7 @@ Momentum direction, used only by the directional table:
 
 ## V — Volatility
 
-**Status:** design approved. Not implemented. There is no Volatility module and no Volatility test.
+**Status:** implemented in `src/market_state/volatility.py`.
 
 V1 Volatility is a backward-looking realised-movement magnitude instrument. It asks how large recent daily price movements have been relative to this market's own recent history.
 
@@ -183,7 +183,7 @@ The two forms are the same. The result is a decimal: 0.20 means 20% annualised. 
 Construction rules:
 
 - Use 21 returns, so a standalone RV21 needs 22 prices. 21 prices are insufficient.
-- Use log returns of `adjusted_close`.
+- Use log returns of `adjusted_close`. Each return is `ln(price_i) - ln(price_(i-1))`, which is the same real number as `ln(price_i / price_(i-1))`. The difference of logs is the implementation, so an extreme finite ratio is not formed first.
 - Set the return mean to zero by construction. Sum the squares. Do not subtract the sample mean.
 - Do not use a sample standard deviation, `ddof=1`, or 20 returns.
 - Annualise with 252.
@@ -236,7 +236,7 @@ What Changed compares the complete regime at `t` with the complete regime at `t-
 - At 274 the current full state can be available. The previous full state cannot. `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
 - At 275 both the current full state and the previous full state can be available.
 
-The running validator still rejects fewer than 273 observations. It has not been raised to 274. The 274 and 275 figures are the approved finance minima and will be enforced when Volatility is integrated.
+The running validator rejects fewer than 274 observations with `DATA_INSUFFICIENT_HISTORY`. 273 and 272 both fail that gate. The 275 figure is the approved What Changed minimum. What Changed is not implemented, so 275 is not yet a validator gate.
 
 ### As-of contract
 
@@ -251,12 +251,12 @@ Volatility supports an exact `as_of_date`. For requested date `t`:
 - today's RV21 does not enter its own percentile
 - later rows are not borrowed to reach 274
 
-### API, design only
+### API
 
-These names are the approved shape. They are not implemented.
+These names are implemented.
 
-1. `calculate_rv21` takes 22 adjusted closes in observation order, oldest first, and returns the decimal RV21.
-2. `classify_volatility(current_rv21, historical_rv21_values)` requires exactly 252 prior values. It returns `below_count`, `equal_count`, `reference_size`, the percentile, the regime, and the reason code.
+1. `calculate_rv21` takes exactly 22 adjusted closes in observation order, oldest first, and returns the decimal RV21. Fewer than 22 closes is `DATA_INSUFFICIENT_HISTORY`. More than 22 closes is `DATA_INVALID_VOLATILITY`. The function does not select a window from a longer series.
+2. `classify_volatility(current_rv21, historical_rv21_values)` requires exactly 252 prior values. It returns a frozen classification with `historical_below_count`, `historical_equal_count`, `historical_reference_size`, `historical_percentile`, `volatility_regime`, and `reason_code`. Any other reference length is `DATA_INVALID_VOLATILITY`.
 3. `calculate_volatility(prices, market_id, as_of_date)` selects one market, applies the as-of rule, and returns a frozen `VolatilityResult`.
 
 `VolatilityResult` fields:
@@ -280,7 +280,7 @@ historical_percentile = 100 * (historical_below_count + 0.5 * historical_equal_c
 
 There is no `reference_count` field. That name belonged to the withdrawn `<=` count. No confidence, signal strength, predicted volatility, or position size is included.
 
-A non-finite or negative volatility input is `DATA_INVALID_PRICE`. Fewer than 22 prices for RV21, or fewer than 274 prices through the as-of date for the regime, is `DATA_INSUFFICIENT_HISTORY`.
+A non-finite, negative, boolean, string, or missing volatility input is `DATA_INVALID_VOLATILITY`. A non-finite, non-positive, boolean, string, or missing price is `DATA_INVALID_PRICE`. Fewer than 22 prices for standalone RV21, or fewer than 274 prices through the as-of date for the regime, is `DATA_INSUFFICIENT_HISTORY`.
 
 ### Future volatility research
 
@@ -364,9 +364,9 @@ Compare the latest complete observation with the immediately previous complete o
 
 ### Current-state minimum history
 
-- 274 valid price observations are sufficient to calculate the latest complete market state once Volatility is integrated.
-- 273 observations are insufficient for that complete state, because the volatility regime then has no price at `t-273`.
-- The running validator still accepts 273 and rejects 272. That gate has not been changed.
+- 274 valid price observations are sufficient to calculate the latest complete market state.
+- 273 observations are insufficient, because the volatility regime then has no price at `t-273`.
+- 272 observations are also insufficient. Both fail with `DATA_INSUFFICIENT_HISTORY`. The validator enforces this 274 gate.
 
 ### What Changed minimum history
 
@@ -395,7 +395,7 @@ The sentence `No market-state change since previous session` is produced only wh
 
 Those five states are the directional state, Trend, Momentum, Volatility, and Relative Strength. A difference in any of them is a categorical transition. Each transition names the instrument, the previous label, the new label, and the reason code.
 
-This comparison is specified here and is not implemented. The running validator still enforces 273 observations. The 274 and 275 minima are enforced when Volatility is integrated.
+This comparison is specified here and is not implemented. The running validator enforces 274 observations. The 275 What Changed minimum is not a validator gate.
 
 ## Freshness and reproducibility
 
@@ -427,7 +427,7 @@ The approved full current state requires 274 valid price observations on the sha
 
 The number is fixed by the volatility regime. RV21 at `t-252` needs the price at `t-273`, and the current price is at `t`, so the length is 274. Trend and Momentum need less history than that. A standalone RV21 needs 22 prices. The complete What Changed comparison needs 275.
 
-The running validator still treats 273 as sufficient and 272 as `DATA_INSUFFICIENT_HISTORY`. No partial state is published. Raising the validator gate to 274 is part of Volatility integration, not this design pass.
+The running validator rejects fewer than 274 observations with `DATA_INSUFFICIENT_HISTORY`. No partial state is published. 275 remains the What Changed minimum and is not enforced by the validator.
 
 ## Validation
 
@@ -455,7 +455,7 @@ Price-data order, after configuration has succeeded:
 4. A repeated `(date, market_id)` is `DATA_DUPLICATE_DATE`, including when the two prices are equal.
 5. A required instrument with no rows is `DATA_MISSING_MARKET`.
 6. A required instrument whose date set differs from the shared date index is `DATA_DATE_INDEX_MISMATCH`.
-7. Fewer than 273 shared observations is `DATA_INSUFFICIENT_HISTORY`. This is the running gate. The approved full-state gate becomes 274 when Volatility is integrated.
+7. Fewer than 274 shared observations is `DATA_INSUFFICIENT_HISTORY`.
 8. A latest shared observation later than `evaluation_date` is `DATA_FUTURE_DATE`. Future rows are not dropped.
 9. A latest shared observation 6 or more calendar days before `evaluation_date` is `DATA_STALE`.
 
@@ -466,7 +466,7 @@ Price-data order, after configuration has succeeded:
 | A required instrument has no rows | `DATA_MISSING_MARKET` |
 | A required instrument is present but its dates differ from the shared index | `DATA_DATE_INDEX_MISMATCH` |
 | More than one row exists for the same `market_id` and `date` | `DATA_DUPLICATE_DATE` |
-| Fewer than 273 valid observations through the analysis date | `DATA_INSUFFICIENT_HISTORY` in the running validator. The approved full-state rule, applied when Volatility is integrated, rejects fewer than 274 |
+| Fewer than 274 valid observations through the analysis date | `DATA_INSUFFICIENT_HISTORY` |
 | `adjusted_close` is non-numeric, non-finite, or not greater than 0 | `DATA_INVALID_PRICE` |
 | `adjusted_close` is blank or missing | `DATA_MISSING_VALUE` |
 
@@ -525,7 +525,11 @@ Phase 1A validation codes, all reachable from the validator:
 - `DATA_STALE`
 - `DATA_UNKNOWN_MARKET`
 
-Specified for the later What Changed phase, and not Phase 1A behaviour:
+Specified for Volatility calculation, and not a regime label:
+
+- `DATA_INVALID_VOLATILITY`
+
+Specified for the later What Changed phase, and not current behaviour:
 
 - `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`
 

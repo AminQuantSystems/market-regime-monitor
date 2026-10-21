@@ -1,6 +1,6 @@
 # Golden acceptance cases
 
-**Status:** Trend cases below are the hand-checked inputs for `tests/test_trend.py`. Momentum cases are the hand-checked inputs for `tests/test_momentum.py`. Volatility cases are an approved design and have no Python tests yet.
+**Status:** Trend cases below are the hand-checked inputs for `tests/test_trend.py`. Momentum cases are the hand-checked inputs for `tests/test_momentum.py`. Volatility cases are the hand-checked inputs for `tests/test_volatility.py`.
 
 Each case is constructed so the expected result can be checked by hand. Price comparisons use the approved exact rules, with no epsilon. Unless a case says otherwise, ACWI's 63-observation return is 0, and only the named prices differ from a flat series.
 
@@ -265,7 +265,7 @@ A Momentum calculation with 64 observations is accepted. 63 observations fail wi
 
 ## 9. Volatility design cases
 
-These cases are the approved Volatility design. They are not implemented and they have no Python tests. RV21 is the zero-mean root-mean-square of 21 log returns, annualised with 252. The percentile is a midrank of the previous 252 RV21 values. Today's RV21 is not in that set. The comparison `previous <= current` is not the percentile rule.
+These cases are the hand-checked Volatility inputs. RV21 is the zero-mean root-mean-square of 21 log returns, annualised with 252. Each log return is `ln(price_i) - ln(price_(i-1))`. The percentile is a midrank of the previous 252 RV21 values. Today's RV21 is not in that set.
 
 ```text
 r_i = ln(price_i / price_(i-1))
@@ -399,21 +399,17 @@ Strong Down fails because momentum is not negative. Down matches because the tre
 
 Expected: Down, `STATE_DOWN`.
 
-## 16. Running validator: 273 observations accepted
+## 16. Validator: 274 observations accepted
 
-This case locks the implemented validator. It is not the approved complete Volatility regime.
+Every required series has the same 274 dates and a finite positive `adjusted_close` on each. `evaluation_date` equals the last date.
 
-Every required series has the same 273 dates and a finite positive `adjusted_close` on each. `evaluation_date` equals the last date.
-
-Expected from the running validator: the panel is accepted. The validator has not been changed to 274.
-
-The approved full state, once Volatility is integrated, needs 274 observations. Case 9e is that rule. At 273 the complete volatility regime is unavailable, so a full current state is not published under the approved rule.
+Expected: the panel is accepted. This is the full current-state minimum. What Changed is not implemented. At 274 the previous full state cannot be calculated, so a later comparison must not say `No market-state change since previous session`.
 
 ## 16b. Approved current state at 274
 
 The same aligned fixture with 274 observations per required series, and `evaluation_date` equal to the last date.
 
-Expected once Volatility is integrated: the current full state can be calculated. The previous full state cannot. `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
+Expected: the current full state can be calculated. The previous full state cannot. `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
 
 The result must not be `No market-state change since previous session`.
 
@@ -421,21 +417,19 @@ The result must not be `No market-state change since previous session`.
 
 Every required series is a constant `adjusted_close` of 100 across all 275 dates. `evaluation_date` equals the last date.
 
-Expected once What Changed and Volatility exist: both states are calculated, every categorical label is unchanged, and the comparison text is exactly `No market-state change since previous session`.
+Expected once What Changed exists: both states are calculated, every categorical label is unchanged, and the comparison text is exactly `No market-state change since previous session`.
 
 On this constant panel the labels on both dates are Trend score 0, Momentum Mixed, Volatility Normal, Relative Strength Neutral, and directional state Neutral. Volatility is Normal because every RV21 is 0, `L = 0`, `E = 252`, and the percentile is 50.
 
-## 17. Running validator: 272 observations rejected
+## 17. 273 and 272 observations rejected
 
-The same aligned fixture with 272 observations per required series.
+The same aligned fixture with 273 observations per required series, and the same fixture with 272.
 
-Expected from the running validator: `DATA_INSUFFICIENT_HISTORY`. No directional state and no instrument state are published.
-
-Under the approved Volatility rule, 273 observations are also insufficient for the complete regime. The running validator still accepts 273. That change waits for Volatility integration.
+Expected: `DATA_INSUFFICIENT_HISTORY`. No directional state and no instrument state are published. 273 prices do not contain the price at `t-273`, so the complete volatility regime cannot be calculated.
 
 ## 18. Staleness of exactly 5 calendar days accepted
 
-A panel the running validator accepts, with 273 observations whose latest date is 2026-03-01. `evaluation_date` is 2026-03-06. This length is the implemented validation fixture.
+A panel the validator accepts, with 274 observations whose latest date is 2026-03-01. `evaluation_date` is 2026-03-06.
 
 Expected: the run succeeds. The age is 5 calendar days.
 
@@ -451,7 +445,7 @@ SPY is present in the file. Every required series except SPY has a price on the 
 
 Expected: `DATA_DATE_INDEX_MISMATCH`. The engine does not fall back to an earlier date and does not forward-fill SPY.
 
-The same code applies when a required series is missing its first date, missing an internal date, or carrying an extra date. It also applies when every required series has 273 rows but the date sets differ.
+The same code applies when a required series is missing its first date, missing an internal date, or carrying an extra date. It also applies when every required series has the same row count but the date sets differ.
 
 ## 20b. Required market absent entirely
 

@@ -7,25 +7,26 @@
 
 ## Phase
 
-Phase 1D — Volatility design approved. Volatility is not implemented.
+Phase 1D — Realised Volatility instrument implemented.
 
 ## What exists
 
 - Owner-approved finance rules in `FINANCE_SPEC.md`
 - Acceptance cases in `GOLDEN_CASES.md`
-- A local Python package, `market_state`, with configuration and price validation
+- A local Python package, `market_state`, with configuration and price validation. The import name is unchanged.
 - The Trend instrument in `src/market_state/trend.py`
 - The Momentum instrument in `src/market_state/momentum.py`
-- Pytest coverage for validation, Trend, and Momentum
+- The realised-volatility instrument in `src/market_state/volatility.py`
+- Pytest coverage for validation, Trend, Momentum, and Volatility
 - This file, plus the interface concept and the read-only Windows/Mac plan
 
 ## History rule
 
-The running validator still accepts 273 observations and rejects 272 with `DATA_INSUFFICIENT_HISTORY`. That code has not been changed for Volatility.
+The validator accepts 274 observations and rejects 273 and 272 with `DATA_INSUFFICIENT_HISTORY`.
 
-The approved full-state minimum becomes 274 when Volatility is implemented. 273 observations are then insufficient for the complete volatility regime. The approved What Changed minimum becomes 275. At 274 the current full state can be available and the previous full state cannot, so `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. `No market-state change since previous session` is allowed only when at least 275 observations exist, both states were calculated, and none of the five categorical states changed.
+274 observations are the full current-state minimum. The earliest reference RV21, at `t-252`, needs the price at `t-273`. The planned complete What Changed minimum is 275. At 274 the current full state can be available and the previous full state cannot, so `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. `No market-state change since previous session` is allowed only when at least 275 observations exist, both states were calculated, and none of the five categorical states changed.
 
-An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed itself is not implemented.
+An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed itself is not implemented. The local project folder has not been renamed.
 
 ## Validation contract
 
@@ -41,7 +42,7 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Validation: implemented
 - Trend: implemented
 - Momentum: implemented
-- Volatility: design approved — not implemented. The regime percentile is the midrank `100 * (L + 0.5 * E) / 252`. A history in which every RV21 equals today's value is percentile 50 and Normal. The `<=` count is not the rule.
+- Volatility: implemented. RV21 uses 21 zero-mean log returns and annualises with 252. The regime percentile is the midrank `100 * (L + 0.5 * E) / 252`. A history in which every RV21 equals today's value is percentile 50 and Normal.
 - Relative Strength: not implemented
 - Directional market state: not implemented
 - What Changed: not implemented
@@ -50,9 +51,8 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Backtesting: not implemented
 - Mac integration: not authorised
 - GitHub publication: none
-- Full-market-state minimum planned for Volatility integration: 274
-- What Changed complete-state minimum planned for that integration: 275
-- Validation code: still enforces 273, and has not been changed for the Volatility requirement
+- Full current-state validation minimum: 274
+- Planned complete What Changed minimum: 275
 
 ## Data and operations
 
@@ -64,4 +64,4 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 
 ## Next approved action
 
-Stop after the Volatility design. Do not implement Volatility, Relative Strength, directional state, What Changed, or UI until that work is authorised.
+Stop after Phase 1D. Do not implement Relative Strength, directional state, What Changed, or UI until that work is authorised.

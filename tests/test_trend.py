@@ -238,6 +238,16 @@ def test_input_history_is_not_mutated():
     pd.testing.assert_frame_equal(short, short_before)
 
 
+def test_another_market_does_not_change_spy_trend():
+    spy = history([80] * 150 + [100] * 49 + [130])
+    other = spy.copy()
+    other["market_id"] = "QQQ"
+    other["adjusted_close"] = 1_000_000
+    mixed = pd.concat([spy, other], ignore_index=True)
+
+    assert calculate_trend(mixed, MARKET, as_of(spy)) == calculate_trend(spy, MARKET, as_of(spy))
+
+
 def test_repeated_calculation_is_identical():
     frame = history([120] * 150 + [100] * 49 + [110])
     first = calculate_trend(frame, MARKET, "2026-03-01")

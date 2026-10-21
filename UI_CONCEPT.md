@@ -40,7 +40,7 @@ A single panel lists state transitions since the approved comparison horizon: as
 
 ## Leaders and laggards
 
-Leaders and laggards are a separate ranking, not the five Benchmark Relative Performance labels. The panel orders enabled board markets by the continuous `active_return_63` value, the asset's 63-observation return minus the ACWI 63-observation return. An example order is QQQ +6.8 percent, SPY +2.7 percent, EWJ +1.4 percent, and EEM -4.8 percent. The classification label, such as Strong Outperform or Underperform, is shown with that value. Ordering does not come from the label alone. ACWI is not ranked. The interface displays the library value and does not recompute it.
+Leaders and laggards are a separate ranking, not the five Benchmark Relative Performance labels. The panel orders enabled board markets by the continuous `active_return_63` value, the asset's 63-observation return minus the return of the common ACWI comparison benchmark. An example order is QQQ +6.8 percent, SPY +2.7 percent, EWJ +1.4 percent, and EEM -4.8 percent. The classification label, such as Strong Outperform or Underperform, is shown with that value. Ordering does not come from the label alone. ACWI is not ranked. The interface displays the library value and does not recompute it.
 
 ## Freshness
 

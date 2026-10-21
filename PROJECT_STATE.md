@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 1E — Benchmark Relative Performance design approved; implementation not yet authorised.
+Phase 1F — Benchmark Relative Performance instrument implemented.
 
 ## What exists
 
@@ -17,7 +17,8 @@ Phase 1E — Benchmark Relative Performance design approved; implementation not 
 - The Trend instrument in `src/market_state/trend.py`
 - The Momentum instrument in `src/market_state/momentum.py`
 - The realised-volatility instrument in `src/market_state/volatility.py`
-- Pytest coverage for validation, Trend, Momentum, and Volatility
+- The Benchmark Relative Performance instrument in `src/market_state/relative_performance.py`
+- Pytest coverage for validation, Trend, Momentum, Volatility, and Benchmark Relative Performance
 - This file, plus the interface concept and the read-only Windows/Mac plan
 
 ## History rule
@@ -43,7 +44,7 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Trend: implemented
 - Momentum: implemented
 - Volatility: implemented. RV21 uses 21 zero-mean log returns and annualises with 252. The regime percentile is `100 * (L + 0.5 * E) / 252`, a Market Regime Monitor half-weight tie convention. A history in which every RV21 equals today's value is percentile 50 and Normal.
-- Benchmark Relative Performance: DESIGN APPROVED — NOT IMPLEMENTED. The measure is the 63-observation active return, asset return minus the ACWI return. The labels are Strong Outperform, Outperform, Neutral, Underperform, and Strong Underperform.
+- Benchmark Relative Performance: implemented. The measure is the 63-observation active return against ACWI, the common V1 comparison benchmark. ACWI is not treated as the mandate-specific benchmark for every regional market. The labels are Strong Outperform, Outperform, Neutral, Underperform, and Strong Underperform.
 - Directional market state: not implemented
 - What Changed: not implemented
 - UI: not implemented
@@ -64,4 +65,4 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 
 ## Next approved action
 
-Stop after the Phase 1E design. Do not implement Benchmark Relative Performance, directional state, What Changed, or UI until that work is authorised.
+Stop after Phase 1F. Do not implement directional state, What Changed, or UI until that work is authorised.

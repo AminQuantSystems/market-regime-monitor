@@ -1,7 +1,7 @@
 # Finance specification — approved V1 model
 
 **Status:** owner-approved V1 finance rules.
-Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D implements realised volatility. Phase 1E approves the Benchmark Relative Performance design. That instrument, directional state, and What Changed are specified here and are not implemented.
+Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D implements realised volatility. Phase 1F implements Benchmark Relative Performance. Directional state and What Changed are specified here and are not implemented.
 
 These rules replace the provisional Phase 0 proposal. Comparisons are exact. The financial definition uses no tolerance and no epsilon.
 
@@ -20,7 +20,7 @@ V1 uses US-listed global-equity market proxies so that every series shares one t
 | EEM | Emerging Markets | ACWI | yes | yes |
 | ACWI | global-equity benchmark | ACWI | no | no |
 
-ACWI is mandatory. It is the V1 benchmark and is required for every Benchmark Relative Performance calculation. It is not a normal board card. It does not receive a Benchmark Relative Performance classification against itself, and that result is not displayed as a board-market result.
+ACWI is mandatory. It is the common V1 comparison benchmark and is required for every Benchmark Relative Performance calculation. It is not a normal board card. It does not receive a Benchmark Relative Performance classification against itself, and that result is not displayed as a board-market result. Using one common benchmark makes the board comparable. It does not mean ACWI is the mandate-specific performance benchmark for every regional market.
 
 ACWI's `benchmark_id` is `ACWI` only so the configuration schema stays uniform. ACWI's `enabled` value is `False`.
 
@@ -295,11 +295,15 @@ V1 measures realised volatility from past adjusted closes. A forecast estimates 
 
 ## R — Benchmark Relative Performance
 
-**Status:** design approved in Phase 1E. Not implemented. No calculation module and no tests exist for this instrument.
+**Status:** implemented in `src/market_state/relative_performance.py`.
 
-The permanent V1 name is Benchmark Relative Performance. The shorter label Relative Performance may be used on a later interface. The earlier working name "relative strength" is withdrawn as the instrument name. That phrase is used in finance for RSI, cross-sectional momentum, a relative-price ratio, and peer ranking. This instrument is none of those.
+The permanent V1 name is Benchmark Relative Performance. The shorter label Relative Performance may be used on a later interface. The question it answers is: how has this market performed over the previous 63 trading observations relative to the common ACWI comparison benchmark? The earlier working name "relative strength" is withdrawn as the instrument name. That phrase is used in finance for RSI, cross-sectional momentum, a relative-price ratio, and peer ranking. This instrument is none of those.
 
-The primary institutional concept is active return: the asset's total return minus the benchmark's total return over the same horizon. V1 reports that difference. It does not substitute a price ratio divided by the benchmark price ratio, a logarithmic relative-return spread, regression alpha, CAPM alpha, an information ratio, tracking-error-adjusted performance, volatility-normalised momentum, or a peer z-score. Those are different measures.
+The calculation is conventional active return: the asset's return minus the benchmark's return over the same horizon. That difference is the usual meaning of active return in institutional active-management terminology. Market Regime Monitor does not claim CFA approval, GIPS compliance, or MSCI methodology replication. It performs cross-market comparative analytics, not formal performance reporting.
+
+ACWI is the common V1 comparison benchmark so every enabled market is placed on one relative-performance scale. That is analytically useful for this product. It is not a claim that ACWI is the formally appropriate performance benchmark for US large-cap equities, Nasdaq equities, UK equities, German equities, Japanese equities, or emerging markets. A formal benchmark is chosen for a mandate, an objective, and an asset universe. A future client implementation may configure mandate-specific benchmarks. That flexibility is outside V1.
+
+V1 does not substitute a price ratio divided by the benchmark price ratio, a logarithmic relative-return spread, regression alpha, CAPM alpha, an information ratio, tracking-error-adjusted performance, volatility-normalised momentum, or a peer z-score. Those are different measures.
 
 ### Formula
 
@@ -311,7 +315,9 @@ benchmark_return_63 = ACWI_price_t / ACWI_price_(t-63) - 1
 active_return_63 = asset_return_63 - benchmark_return_63
 ```
 
-The stored value is the decimal difference. An active return of +0.04 means the asset outperformed ACWI by 4 percentage points over the 63 observations. An active return of -0.05 means the asset underperformed ACWI by 5 percentage points.
+The stored value is the decimal difference. It is not annualised. An active return of +0.04 means the asset outperformed the common comparison benchmark by 4 percentage points over the 63 observations. An active return of -0.05 means the asset underperformed that benchmark by 5 percentage points.
+
+For ordinary positive prices the simple return is `price_t / price_(t-63) - 1`, and that finite value is what is stored and classified. It is not rounded first. `expm1(ln(price_t) - ln(price_(t-63)))` is the same real number and does not form the quotient. The implementation evaluates that form when the direct quotient is not a finite return strictly greater than -1. A non-finite result, or a result that collapses to -1 or below, is `DATA_INVALID_ACTIVE_RETURN`. A positive ending price is not silently treated as a total loss. Nothing is clipped, capped, or repaired. The direct simple return is the classified value whenever it is finite and strictly greater than -1, because that is the definition and because the authorised boundary prices then stay on the specified side of 0.05, 0.02, -0.02, and -0.05.
 
 An asset return of +0.10 and an ACWI return of +0.06 produce +0.04. An asset return of -0.03 and an ACWI return of +0.02 produce -0.05.
 
@@ -323,7 +329,11 @@ Sixty-three observations are about one trading quarter. The same medium horizon 
 
 ### Benchmark
 
-Every enabled board market uses `benchmark_id = ACWI`. ACWI is mandatory. It is not a normal board market, and it does not receive this classification against itself. A direct request for ACWI as the asset fails closed. It does not return a zero active return or Neutral.
+Every enabled board market uses `benchmark_id = ACWI`. ACWI is mandatory and is the common comparison benchmark. It is not a normal board market, and it does not receive this classification against itself. A direct request whose `market_id` is ACWI, or whose `market_id` equals `benchmark_id`, fails with `DATA_BENCHMARK_EXCLUDED`. It does not return a zero active return or Neutral. Any other `benchmark_id` fails with `CONFIG_WRONG_BENCHMARK`.
+
+The current V1 universe is market proxies represented by `adjusted_close` series. ACWI is the same kind of proxy in the project data model. Until a production market-data source is selected, Market Regime Monitor does not claim that `market_id` ACWI is official MSCI index data, that the proxy reproduces the MSCI ACWI Index, or that ETF expenses, withholding taxes, tracking difference, or a vendor's corporate-action treatment match an official index. No vendor is selected in this phase.
+
+Benchmark-relative comparison should use economically comparable total-return series. V1 uses `adjusted_close` as its total-return proxy. What that field contains depends on the eventual provider. Before any production or vendor integration, the project must verify and document split adjustment, cash-distribution adjustment, currency convention, corporate-action methodology, and whether the asset series and the benchmark series are economically comparable. Formal performance measurement is not claimed before that verification.
 
 ### Classification bands
 
@@ -386,30 +396,30 @@ The panel validator remains at 274 observations because the volatility regime is
 
 At date `t`, the asset return uses `asset_t` and `asset_(t-63)`. The benchmark return uses `ACWI_t` and `ACWI_(t-63)`. No row after `t` may change the result. Both series must contain the exact as-of date, and the lagged observation must be the same date on both series. There is no nearest-date substitution, no future borrowing, no fill, and no interpolation. Future rows cannot be used to make 63 observations into 64.
 
-### Designed failure behaviour
+### Failure behaviour
 
-This contract is not implemented. Where an existing public code already means the failure, the future calculation reuses it. Two conditions need new codes, because no current code means either of them: the requested market is the benchmark, and a directly supplied active return is not a usable number. The second code is defined with the classifier below. Both codes are specified here and are not implemented.
+Where an existing public code already means the failure, the calculation reuses it. Two conditions need their own codes, because no earlier code means either of them: the requested market is the benchmark, and an active return cannot be represented as a usable finite number.
 
 | Condition | Code |
 |---|---|
+| `market_id` is ACWI, or `market_id` equals `benchmark_id` | `DATA_BENCHMARK_EXCLUDED` |
 | `benchmark_id` is not ACWI | `CONFIG_WRONG_BENCHMARK` |
-| The requested market is ACWI | `DATA_BENCHMARK_EXCLUDED` |
 | The requested market has no rows | `DATA_MISSING_MARKET` |
 | ACWI has no rows | `DATA_MISSING_MARKET` |
 | The as-of date is absent from the asset | `DATA_INVALID_DATE` |
 | The as-of date is absent from ACWI | `DATA_INVALID_DATE` |
 | A date is repeated on the asset or on ACWI | `DATA_DUPLICATE_DATE` |
-| The asset and ACWI date sets through the as-of date differ | `DATA_DATE_INDEX_MISMATCH` |
-| Fewer than 64 aligned observations through the as-of date | `DATA_INSUFFICIENT_HISTORY` |
+| The latest 64 asset and ACWI date labels differ | `DATA_DATE_INDEX_MISMATCH` |
+| Fewer than 64 observations through the as-of date | `DATA_INSUFFICIENT_HISTORY` |
 | An endpoint adjusted close is missing, non-finite, or not greater than 0 | `DATA_INVALID_PRICE` |
 
 The four endpoints are the asset and ACWI closes at `t` and at `t-63`. The panel validator already checks every price in the panel. The standalone calculation checks the endpoints it consumes. It does not replace the panel validator.
 
-`DATA_BENCHMARK_EXCLUDED` is proposed for this instrument and is not implemented. The message names ACWI. The code is not a classification label.
+`DATA_BENCHMARK_EXCLUDED` names the market that was refused. It is not a classification label. `DATA_INVALID_ACTIVE_RETURN` is also used when `expm1` overflows or the simple return collapses to -1 or below.
 
-### Designed API
+### API
 
-Not implemented. The two functions stay independent of Trend, Momentum, and Volatility.
+Implemented in `src/market_state/relative_performance.py`. The two functions stay independent of Trend, Momentum, and Volatility.
 
 ```text
 classify_relative_performance(active_return_63)
@@ -433,7 +443,7 @@ The result is immutable. Its fields are:
 
 Full precision is retained. There is no score, confidence, probability, predicted return, or position size, and there is no UI formatting in the result.
 
-`classify_relative_performance` is a predicate on one active return. It does not rebuild that return from prices. A negative value and a huge finite value are valid inputs and fall through the bands. A non-finite, boolean, string, or missing value fails closed. No existing code means "this active return is not a usable number," so the proposed code is `DATA_INVALID_ACTIVE_RETURN`. It is not implemented. A raw arithmetic exception must not escape.
+`classify_relative_performance` is a predicate on one active return. It does not rebuild that return from prices. A negative value and a huge finite value are valid inputs and fall through the bands. A non-finite, boolean, string, or missing value fails with `DATA_INVALID_ACTIVE_RETURN`. A raw arithmetic exception does not escape.
 
 ### Future benchmark-relative research
 
@@ -446,6 +456,7 @@ These constructions are outside V1 and are not implemented.
 - risk-adjusted momentum
 - active return divided by tracking error
 - relative-price-ratio trend analysis
+- mandate-specific benchmarks in place of the common ACWI comparison benchmark
 
 Each of those answers a different question from the 63-observation arithmetic active return.
 
@@ -650,7 +661,7 @@ Specified for Volatility calculation, and not a regime label:
 
 - `DATA_INVALID_VOLATILITY`
 
-Specified for Benchmark Relative Performance, and not implemented:
+Specified for Benchmark Relative Performance calculation, and not regime labels:
 
 - `DATA_BENCHMARK_EXCLUDED`
 - `DATA_INVALID_ACTIVE_RETURN`

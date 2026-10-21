@@ -1,6 +1,6 @@
 # Golden acceptance cases
 
-**Status:** Trend cases below are the hand-checked inputs for `tests/test_trend.py`. Momentum cases are the hand-checked inputs for `tests/test_momentum.py`. Volatility cases are the hand-checked inputs for `tests/test_volatility.py`. Benchmark Relative Performance cases are design only. They do not yet have tests.
+**Status:** Trend cases below are the hand-checked inputs for `tests/test_trend.py`. Momentum cases are the hand-checked inputs for `tests/test_momentum.py`. Volatility cases are the hand-checked inputs for `tests/test_volatility.py`. Benchmark Relative Performance cases are the hand-checked inputs for `tests/test_relative_performance.py`.
 
 Each case is constructed so the expected result can be checked by hand. Price comparisons use the approved exact rules, with no epsilon. Unless a case says otherwise, ACWI's 63-observation return is 0, and only the named prices differ from a flat series.
 
@@ -349,9 +349,9 @@ At 275 prices both states can be calculated. A constant `adjusted_close` of 100 
 
 ## 10. Benchmark Relative Performance
 
-Design only. These cases do not have tests. The earlier formal labels Leader, Strong, Weak, and Laggard are withdrawn. The classification labels are Strong Outperform, Outperform, Neutral, Underperform, and Strong Underperform.
+Verified by `tests/test_relative_performance.py`. The earlier formal labels Leader, Strong, Weak, and Laggard are withdrawn. The classification labels are Strong Outperform, Outperform, Neutral, Underperform, and Strong Underperform.
 
-Each return is the simple 63-observation adjusted-close return. Active return is the asset return minus the ACWI return. Classification uses that computed difference. There is no epsilon and no rounding before the comparison. In the price rows, both series are 100 at `t-63`. The active return in real arithmetic is then `(asset price at t - ACWI price at t) / 100`. The stored measurement keeps full precision.
+Each return is the simple 63-observation adjusted-close return, `price_t / price_(t-63) - 1`. Active return is the asset return minus the ACWI return. Classification uses that computed difference. There is no epsilon and no rounding before the comparison. In the price rows, both series are 100 at `t-63`. The active return in real arithmetic is then `(asset price at t - ACWI price at t) / 100`. The stored measurement keeps full precision. ACWI is the common comparison benchmark, not a claim that it is each market's mandate benchmark.
 
 A separate Leaders / Laggards panel, if built later, ranks enabled markets by the continuous active return. That ranking is not these five labels.
 
@@ -441,7 +441,7 @@ The asset rose. It still underperformed ACWI. Momentum can remain positive on th
 
 The asset and ACWI share the same 64 dates through the as-of date, with a finite positive adjusted close on every consumed endpoint. The return uses the last close and the close 63 observations earlier.
 
-Expected once the instrument exists: the calculation succeeds.
+Expected: the calculation succeeds.
 
 ### 10o. 63 observations rejected
 

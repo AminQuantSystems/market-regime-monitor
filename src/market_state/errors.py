@@ -1,4 +1,4 @@
-"""Public errors for market-data and configuration validation."""
+"""Public errors for market-data validation, configuration, and calculations."""
 
 
 class MarketDataError(ValueError):

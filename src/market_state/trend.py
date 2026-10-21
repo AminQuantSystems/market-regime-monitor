@@ -2,7 +2,7 @@
 
 Trend answers where the current adjusted close sits relative to its
 50-observation and 200-observation simple moving averages. It is not a
-trading signal and does not use momentum, volatility, or relative strength.
+trading signal and does not use momentum, volatility, or benchmark relative performance.
 """
 
 from __future__ import annotations

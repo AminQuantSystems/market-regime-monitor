@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 1I — What Changed categorical monitoring implemented.
+Phase 2A — MEEM Toolkit Design System and Market State Board specification complete.
 
 ## What exists
 
@@ -21,7 +21,9 @@ Phase 1I — What Changed categorical monitoring implemented.
 - The Market Regime Snapshot orchestrator in `src/market_state/regime.py`
 - The What Changed comparison in `src/market_state/change.py`
 - Pytest coverage for validation, Trend, Momentum, Volatility, Benchmark Relative Performance, snapshot orchestration, and categorical change
-- This file, plus the interface concept and the read-only Windows/Mac plan
+- The MEEM Toolkit Design System v1.0 in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`
+- The Market State Board and detail specification in `UI_CONCEPT.md`
+- This file, plus the read-only Windows/Mac plan
 
 ## History rule
 
@@ -49,8 +51,14 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Benchmark Relative Performance: implemented and numerically hardened. The measure is the 63-observation active return against ACWI, the common V1 comparison benchmark. Classification treats a value within `1e-12` of +0.05, +0.02, -0.02, or -0.05 as that threshold. The stored active return stays at full precision. ACWI is not the mandate-specific benchmark for every regional market.
 - Market Regime Snapshot: implemented and integrity-hardened. It assembles `TrendResult`, `MomentumResult`, `VolatilityResult`, and `RelativePerformanceResult` for one selected market and one as-of date. It does not call full-board validation. A component identity that contradicts the request fails with `MarketRegimeError` and `REGIME_COMPONENT_MISMATCH`. Direction is `trend.trend_state`. No composite directional regime exists. This assembly is not independent bank model validation or regulatory approval.
 - What Changed: implemented. It compares the four categorical labels on the current snapshot and the immediately previous observation. Statuses are `CHANGED`, `UNCHANGED`, and `UNAVAILABLE`. It calculates no finance.
-- UI: not implemented
-- Shared MEEM design tokens: not yet defined
+- Finance and monitoring core: frozen for V1 UI work
+- Tests: 309 passed
+- MEEM production brand palette: locked
+- MEEM Toolkit Design System: v1.0 specified
+- Market State Board: design specified, not implemented
+- Detail and drill-down: design specified, not implemented
+- UI framework: not yet selected
+- UI implementation: not started
 - Live or vendor market data: not implemented
 - Backtesting: not implemented
 - Mac integration: not authorised
@@ -70,6 +78,10 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 
 One local measurement on 21 October 2026, Python 3.14, this Windows machine: assembling snapshots for SPY, QQQ, IWM, EWU, EWG, EWJ, and EEM from one synthetic 274-observation panel took 0.22 seconds. The same seven markets, each with What Changed, on one synthetic 275-observation panel took 0.32 seconds. The panel also contained ACWI. Both figures are diagnostic evidence only. They are not pass/fail limits. This workload provides no evidence that Mac offload is justified. No concurrency and no multiprocessing have been added. A later Mac measurement may matter for a large historical backtest, a parameter sweep, a scenario grid, or another large multi-period research workload. It is not relevant to the current seven-market snapshot or What Changed comparison.
 
+## Deferred finding
+
+The production calculation path creates snapshots through the integrity-hardened snapshot API. The lower-level pure comparator does not independently re-check malformed nested component identity on a manually constructed snapshot. This is deferred low-priority public-API hardening for a future pre-publication phase. It is not a UI blocker. `change.py` was not altered in Phase 2A.
+
 ## Next approved action
 
-Stop after Phase 1I. Do not implement UI or MEEM colour tokens until that work is authorised.
+Stop after Phase 2A. Do not implement the UI, select a framework, or change the frozen finance core until that work is authorised.

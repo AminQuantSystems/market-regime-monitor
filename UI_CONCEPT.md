@@ -1,119 +1,199 @@
 # Interface concept
 
-**Status:** Interface concept. No interface is implemented. Current project status is in `PROJECT_STATE.md`.
+**Status:** design specified. No interface is implemented. No UI framework is selected. Current project status is in `PROJECT_STATE.md`. Visual tokens are in `MEEM_DESIGN_SYSTEM.md` and `MEEM_DESIGN_TOKENS.json`.
 
 ## Intent
 
-The interface should feel like a restrained control-room instrument panel: dense, legible, and calm enough to scan. It is not an aviation theme. No decorative gauges are required to read the state.
+The primary question is:
 
-Market Regime Monitor must be visually distinct from Portfolio Risk X-Ray. Portfolio Risk X-Ray uses a blue allocation band and amber concentration marks on a navy field. This product should use a darker charcoal field, a single cool status hue for neutral information, and a separate muted pair for up and down states. Colour encodes state. It is not decoration, and colour is never the only carrier of meaning.
+```text
+WHAT IS THE STATE OF THE MAJOR MARKETS RIGHT NOW, AND WHAT CHANGED?
+```
 
-## Two-second requirement
+A finance-aware user answers that from the first view in about two seconds. The user does not calculate, interpret a chart, remember an indicator rule, open seven cards, hover a row, read prose, or inspect a formula. The first view is categorical. Numbers come second.
 
-A user must be able to understand the core state of one market in approximately two seconds. This is a hard requirement for the primary Market State Board.
+The screen is dense analytical software in the MEEM visual family. It is not the marketing homepage. It does not contain a large Engineering Intelligence hero, a giant decorative logo, marketing capability cards, or website calls to action. The website defines the brand. The application defines the workspace.
 
-The board uses fixed columns, in this order:
+## Authority
+
+Visual decisions follow the order in `MEEM_DESIGN_SYSTEM.md`. The production brand pack wins over an older choice in this document. Market Regime Monitor uses the shared MEEM tokens. It does not invent a private green, red, amber, or information colour. Product-specific state mapping is in this file. The reusable token file stays generic.
+
+## Market State Board
+
+The board is one institutional table. It is not seven oversized cards. It has exactly six columns, in this order, and no seventh primary finance column:
 
 ```text
 MARKET | DIRECTION | MOMENTUM | VOL | RELATIVE | CHANGE
 ```
 
-Direction is the Trend state. It is a heading, not a second calculation. Examples:
+There is no composite regime column, score, confidence, or recommendation.
+
+Stable order. The board is never reordered by performance, direction, volatility, or alerts. Location is part of the scan.
+
+| Order | Market | Ticker |
+|---|---|---|
+| 1 | S&P 500 | SPY |
+| 2 | Nasdaq 100 | QQQ |
+| 3 | Russell 2000 | IWM |
+| 4 | UK Equities | EWU |
+| 5 | Germany Equities | EWG |
+| 6 | Japan Equities | EWJ |
+| 7 | Emerging Markets | EEM |
+
+ACWI is the benchmark. It is not a board row.
+
+The market cell shows the display name, then the ticker. `display_name` is presentation and configuration data. It is not a field of `MarketRegimeSnapshot`.
 
 ```text
-NASDAQ 100  | STRONG UP | ACCELERATING  | ELEVATED | OUTPERFORM        | M
-UK EQUITIES | DOWN      | DETERIORATING | HIGH     | STRONG OUTPERFORM | V
+S&P 500
+SPY
 ```
 
-The second row is a valid state. The market can be falling, with deteriorating pace and high realised volatility, and still be strongly ahead of the common ACWI benchmark.
+Conceptual desktop widths, as guidance only: MARKET 24%, DIRECTION 15%, MOMENTUM 18%, VOL 11%, RELATIVE 22%, CHANGE 10%. A long label does not resize the board.
 
-Design rules for that scan:
+A row is about 48–54 px. All seven markets fit the primary desktop view. Every row uses the same column order, type, spacing, vocabulary, and interaction. Geography does not change the visual grammar.
 
-- Words come before raw numbers.
-- Every market uses the same column positions and the same visual grammar.
-- Colour is restrained and institutional. A label remains readable without its colour.
-- No gauge is required to interpret a state.
-- No conventional indicator chart is required to understand the state.
-- The user does not calculate anything.
-- Ordinary state labels do not need a legend.
-- Detailed figures and reason codes appear on drill-down.
-- The primary screen is for scanning, not for analytical density.
+Examples:
 
-The four words together are the regime signature, for example Strong Up / Accelerating / Elevated / Outperform. The interface shows that tuple. It does not collapse it into one score, one probability, or a name such as Risk-On or Crisis.
+```text
+Nasdaq 100  | STRONG UP | ACCELERATING  | ELEVATED | OUTPERFORM        | M
+UK Equities | DOWN      | DETERIORATING | HIGH     | STRONG OUTPERFORM | V
+```
 
-## Market State Board
+The second row is a valid state. A falling market with deteriorating pace and high realised volatility can still be strongly ahead of ACWI.
 
-The board is the primary surface. It is one row per configured asset, in a stable order.
+## State cells
 
-Each row shows:
+Each cell shows the written category: STRONG UP, ACCELERATING, ELEVATED, OUTPERFORM. Colour reinforces the words. A small line or dot may sit beside the label. Stronger categories use heavier type and a small structural marker. They do not use a different hue.
 
-- market name
-- Direction, which is the Trend state: Strong Up, Up, Neutral, Down, or Strong Down
-- Momentum: Accelerating, Positive, Mixed, Negative, or Deteriorating
-- Volatility: Low, Normal, Elevated, or High
-- Relative Performance: Strong Outperform, Outperform, Neutral, Underperform, or Strong Underperform
-- a compact change mark, once What Changed exists
+Up and Strong Up share the positive hue. Down and Strong Down share the negative hue. Outperform and Strong Outperform share the positive hue. Colour is never the only difference.
 
-The row must not say buy, sell, overweight, or underweight. Nothing required for the two-second reading may depend on a tooltip.
+Cells do not use a large bright fill, a traffic light without text, a giant badge, an emoji, or a recommendation arrow. Ordinary labels such as STRONG UP, DOWN, ACCELERATING, DETERIORATING, HIGH, OUTPERFORM, and N/A are readable without a legend.
 
-The future row reads the current snapshot and the change result. It does not reformat the approved state labels and it does not calculate them:
+The scanning row does not show SMA50, SMA200, the 21-session or 63-session returns, pace, RV21, the volatility percentile, active return, or reason codes. The board answers what state. The detail panel answers why.
 
-- MARKET is the configured `display_name`, joined in presentation from `market_id`
-- DIRECTION is `current_snapshot.trend.trend_state`
-- MOMENTUM is `current_snapshot.momentum.momentum_state`
-- VOL is `current_snapshot.volatility.volatility_regime`
-- RELATIVE is `current_snapshot.relative_performance.relative_performance_state`
-- CHANGE is the change status plus the changed dimension letters
+## Semantic mapping
 
-CHANGE is presentation of a result that does not exist yet. `CHANGED` shows the letters that changed, in order: `D`, `M`, `V`, `R`. Examples are `M`, `D M`, `M V R`, and `D M V R`. `UNCHANGED` shows `—`. `UNAVAILABLE` shows `N/A`. The primary column does not use an arrow. An arrow would imply better or worse, and V1 does not make that judgement. Drill-down shows the words, such as Momentum Positive to Accelerating, and may say `No market-state change since previous session` only for `UNCHANGED`.
+This mapping is specific to Market Regime Monitor. The colours are the shared tokens in `MEEM_DESIGN_SYSTEM.md`.
 
-## What changed
+Positive:
 
-What Changed is implemented in the library and is not drawn on a screen. A transition is a change in Direction, Momentum, Volatility, or Relative Performance. There is no composite-regime transition. The comparison retains every changed dimension. It does not keep only one of them. `MarketRegimeChange` stores the two snapshots and the transition labels. A future screen derives `D`, `M`, `V`, `R`, `—`, and `N/A` from `change_status` and `transitions`. The result does not store those glyphs or any colour.
+- Direction: Strong Up, Up
+- Momentum: Accelerating, Positive
+- Relative Performance: Strong Outperform, Outperform
 
-## Shared MEEM visual system
+Negative:
 
-Every MEEM finance and investment-technology product uses one visual system taken from the MEEM Technologies website. Market Regime Monitor is the first project that will define reusable MEEM design tokens, and that work waits for the UI phase. The website palette is inspected before any token is final. This concept does not set colour values.
+- Direction: Down, Strong Down
+- Momentum: Negative, Deteriorating
+- Relative Performance: Underperform, Strong Underperform
 
-The shared system requires one base brand palette, the same colour for the same meaning in every tool, and shared background, surface, accent, border, typography, spacing, and control conventions. Styling stays restrained and institutional. It does not use a retail-trading red and green overload. Colour is never the only carrier of meaning: the text, state label, or symbol remains sufficient. Accessibility and legibility are mandatory. The two-second reading outranks decoration.
+Neutral:
 
-What Changed logic contains no colour. A later screen may highlight a changed `D`, `M`, `V`, or `R` marker with those shared semantic tokens. The change model itself knows only the dimension and the two state labels.
+- Direction: Neutral
+- Momentum: Mixed
+- Relative Performance: Neutral
+- Volatility: Low, Normal
 
-## Leaders and laggards
+Attention:
 
-Leaders and laggards are a separate ranking, not the five Benchmark Relative Performance labels. The panel orders enabled board markets by the continuous `active_return_63` value, the asset's 63-observation return minus the return of the common ACWI comparison benchmark. An example order is QQQ +6.8 percent, SPY +2.7 percent, EWJ +1.4 percent, and EEM -4.8 percent. The classification label, such as Strong Outperform or Underperform, is shown with that value. Ordering does not come from the label alone. ACWI is not ranked. The interface displays the library value and does not recompute it.
+- Volatility: Elevated
+- Volatility: High, with stronger type and a marker, still the attention hue
 
-## Freshness
+Information:
 
-The board shows the as-of date of the calculation and whether any asset failed staleness or history checks. A failed asset is shown as unavailable with the library error. It is not shown as Neutral.
+- What Changed dimension letters D, M, V, and R
 
-## Drill-down
+Unavailable:
 
-Selecting a card opens the explanation for that asset:
+- N/A, including insufficient comparison history
 
-- each instrument's measurements (for example the two momentum returns, the annualised volatility, the percentile, and the 63-observation active return)
-- the rule that fired
-- the reason code
-- the prior label used by "What changed"
+System error is only a genuine failed validation, invalid data, a failed operation, or an integrity failure. A negative market state is not coloured as a system error.
 
-This is the audit view. It is not a second dashboard.
+Volatility is not a directional judgement. Low and Normal are neutral. Elevated and High are attention. High volatility is not system-error red.
 
-## Charts
+## Change column
 
-A simple price history may appear in the drill-down as secondary evidence. It is not the primary interface. V1 does not draw a chart overlaid with moving-average lines, momentum oscillators, and volatility bands.
+What Changed is implemented in the library. The screen that presents it is not implemented. The column is presentation only. The finance model does not store these glyphs.
 
-## Explicitly excluded
+| Status | Cell |
+|---|---|
+| CHANGED | `D`, `M`, `V`, `R` in that order |
+| UNCHANGED | `—` |
+| UNAVAILABLE | `N/A` |
 
-- fake gauges and needle animations
-- decorative instrument bezels
-- unexplained risk scores or confidence meters
+Examples of a changed cell: `M`, `D M`, `M V R`, `D M V R`. Changed letters use information styling. Unchanged uses the neutral muted treatment. Unavailable uses unavailable styling. The column does not use green, red, an up arrow, a down arrow, `+1`, `-1`, GOOD, or BAD.
+
+The screen reads `change_status` and `transitions`. It does not recompute them.
+
+## Header
+
+The header is compact. It is not a row of large KPI cards, and it is not the marketing-site navigation.
+
+Left: the official MEEM standalone mark, then MARKET REGIME MONITOR.
+
+Context, as short facts:
+
+```text
+AS OF      <date>
+BENCHMARK  ACWI
+UNIVERSE   7 MARKETS
+DATA       VALID
+```
+
+DATA VALID appears only when the application has passed the validation layer. It is not a decoration.
+
+Sapphire, through the accessible dark accent where a dark surface requires it, is used sparingly: a thin rule, the selected row, active navigation, a primary action, and a brand separator. The application is not a blue field.
+
+## Selection and eye path
+
+A selected row uses a subtle surface change and a 2 px marker in `dark.accent_accessible`. Keyboard focus is visible. There is no glow. Selection does not change the finance meaning.
+
+The eye path is MARKET, DIRECTION, MOMENTUM, VOL, RELATIVE, CHANGE. Nothing sits between the header and the rows except the column headings. Charts are not placed above the board.
+
+## Detail
+
+Selecting a market opens the evidence. On a wide desktop the detail is a panel to the right and the board stays visible. On a narrower screen the detail may sit beneath the board. The board remains recognisable.
+
+The panel shows the market, `market_id`, and `as_of_date`, then:
+
+- Direction: state, adjusted close, SMA50, SMA200, reason code
+- Momentum: state, 21-session return, 63-session return, 21-session pace, 63-session pace, reason code
+- Volatility: regime, RV21, historical percentile, below count, equal count, reference size, reason code
+- Relative Performance: state, asset return 63, ACWI return 63, active return 63, reason code
+- What Changed: status, and every transition as previous state to current state
+
+Every number comes from the existing result objects. The interface performs no finance calculation.
+
+V1 does not add RSI, MACD, stochastic, Bollinger overlays, a candlestick wall, or gauge clusters. Charts are not required to understand the current state. A simple price history may appear in the detail as secondary evidence. It is not the primary interface.
+
+## Layout
+
+Desktop first, from 1366 px. On a wide screen the board and the detail panel may sit together. The analytical working width is about 1400–1600 px. Extra width may hold the detail panel. Rows are not stretched into empty cells on an ultrawide monitor.
+
+On a narrow screen all six finance columns remain. A dimension is not hidden to fit. The board may scroll horizontally inside its own container. The page does not scroll horizontally. A sticky MARKET column may be used later. It is not implemented in this phase.
+
+## Acceptance
+
+The first view is acceptable when a finance-aware user can, in about two seconds, see which markets are Up or Down, which are Accelerating or Deteriorating, where volatility is Elevated or High, which are Outperforming or Underperforming ACWI, and which markets changed state, without opening detail, reading a formula, using a legend, or studying a graph.
+
+Within about five seconds the same user can also pick out the strongest apparent trend category, the elevated or high volatility markets, benchmark underperformance, and whether any state changed. That is a usability objective. It is not a ranking algorithm.
+
+After a market is selected, the user can answer why the board says what it says from the exact numbers, the category, the reason codes, and the What Changed transitions, without the interface recalculating anything.
+
+## Separate ranking
+
+Leaders and laggards are not the board. They are a separate ranking by the continuous `active_return_63` value. An example order is QQQ +6.8 percent, SPY +2.7 percent, EWJ +1.4 percent, and EEM -4.8 percent. The classification label is shown with that value. Ordering does not come from the label alone. ACWI is not ranked. The interface displays the library value and does not recompute it. This ranking does not reorder the Market State Board.
+
+## Freshness and failures
+
+The header shows the as-of date. An asset that failed staleness, history, or another validation check is unavailable, with the library error. It is not shown as Neutral. A failed operation uses system-error styling. A Down or Strong Down state does not.
+
+## Excluded from V1
+
+- a composite score, confidence, or recommendation
+- BUY or SELL callouts
+- fake gauges, needle motion, and decorative bezels
 - AI-written market commentary
-- BUY/SELL callouts
-- any calculation not already present in the library output
-
-## Presentation rules
-
-- Dark, high-contrast, and quiet.
-- One question per region.
-- User-supplied names, if any are ever rendered into custom markup, are escaped.
-- The interface remains usable if JavaScript charting is absent, because the board does not depend on a chart.
+- any calculation that is not already in the library output
+- a chosen UI framework

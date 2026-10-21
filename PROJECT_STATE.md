@@ -7,14 +7,15 @@
 
 ## Phase
 
-Phase 1A — Project skeleton and deterministic data validation implemented. The post-audit hardening pass is included. Phase 1B is not authorised.
+Phase 1B — Trend instrument implemented.
 
 ## What exists
 
 - Owner-approved finance rules in `FINANCE_SPEC.md`
 - Acceptance cases in `GOLDEN_CASES.md`
 - A local Python package, `market_state`, with configuration and price validation
-- Pytest coverage for that validation contract
+- The Trend instrument in `src/market_state/trend.py`
+- Pytest coverage for validation and Trend
 - This file, plus the interface concept and the read-only Windows/Mac plan
 
 ## History rule
@@ -37,15 +38,19 @@ What Changed itself is not implemented. Phase 1A only enforces the 273-observati
 - `DATA_MISSING_MARKET` means a required instrument has no rows. `DATA_DATE_INDEX_MISMATCH` means the instrument is present on a different date set.
 - Validation is deterministic and first-failure-wins. Configuration is checked before prices. Schema and values are checked before history and freshness.
 
-## Explicitly not implemented
+## Instrument status
 
-- Trend
-- Momentum
-- Volatility
-- Relative Strength
-- Directional state
-- What Changed
-- UI
+- Validation: implemented
+- Trend: implemented
+- Momentum: not implemented
+- Volatility: not implemented
+- Relative Strength: not implemented
+- Directional market state: not implemented
+- What Changed: not implemented
+- UI: not implemented
+- Live or vendor market data: not implemented
+- Mac integration: not authorised
+- GitHub publication: none
 
 ## Data and operations
 
@@ -57,4 +62,4 @@ What Changed itself is not implemented. Phase 1A only enforces the 273-observati
 
 ## Next approved action
 
-Stop at Phase 1A. Do not start indicator calculations until the owner approves Phase 1B.
+Stop at Phase 1B. Do not start Momentum or any other instrument until that phase is authorised.

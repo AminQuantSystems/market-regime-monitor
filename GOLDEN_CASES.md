@@ -1,6 +1,6 @@
 # Golden acceptance cases
 
-**Status:** documentation only. These cases are the future tests. No Python tests are created in Phase 0.5.
+**Status:** Trend cases below are the hand-checked inputs for `tests/test_trend.py`. Later instruments remain documentation until their phase is authorised.
 
 Each case is constructed so the expected result can be checked by hand. Price comparisons use the approved exact rules, with no epsilon. Unless a case says otherwise, ACWI's 63-observation return is 0, and only the named prices differ from a flat series.
 
@@ -20,7 +20,7 @@ SMA200 = (150 × 80 + 49 × 100 + 130) / 200 = 85.15
 130 > 100.6 > 85.15
 ```
 
-Expected: score +2, `TREND_STRONG_UP_ALIGNMENT`.
+Expected: price 130, SMA50 100.6, SMA200 85.15, score +2, Strong Up, `TREND_STRONG_UP_ALIGNMENT`.
 
 ### 1b. Score +1
 
@@ -34,7 +34,7 @@ SMA200 = (150 × 50 + 49 × 100 + 90) / 200 = 62.45
 90 > 62.45, and 90 > 99.8 is false
 ```
 
-Expected: score +1, `TREND_UP_ABOVE_200`.
+Expected: price 90, SMA50 99.8, SMA200 62.45, score +1, Up, `TREND_UP_ABOVE_200`.
 
 ### 1c. Score -1
 
@@ -48,7 +48,7 @@ SMA200 = (150 × 120 + 49 × 100 + 110) / 200 = 115.05
 110 < 115.05, and 110 < 100.2 is false
 ```
 
-Expected: score -1, `TREND_DOWN_BELOW_200`.
+Expected: price 110, SMA50 100.2, SMA200 115.05, score -1, Down, `TREND_DOWN_BELOW_200`.
 
 ### 1d. Score -2
 
@@ -62,7 +62,7 @@ SMA200 = (150 × 150 + 49 × 120 + 100) / 200 = 142.4
 100 < 119.6 < 142.4
 ```
 
-Expected: score -2, `TREND_STRONG_DOWN_ALIGNMENT`.
+Expected: price 100, SMA50 119.6, SMA200 142.4, score -2, Strong Down, `TREND_STRONG_DOWN_ALIGNMENT`.
 
 ## 2. Trend equality at SMA200
 
@@ -74,7 +74,7 @@ SMA200 = 100
 price == SMA200
 ```
 
-Expected: score 0, `TREND_NEUTRAL_AT_200`. The +2 and -2 chains both fail because their inequalities are strict.
+Expected: price 100, SMA50 100, SMA200 100, score 0, Neutral, `TREND_NEUTRAL_AT_200`. The +2 and -2 chains both fail because their inequalities are strict.
 
 ### Additional equality: SMA50 == SMA200 while price is above SMA200
 
@@ -91,7 +91,51 @@ SMA200 = (150 × 100 + 48 × 100 + 90 + 110) / 200 = 100
 110 > 100, and SMA50 > SMA200 is false
 ```
 
-Expected: score +1, `TREND_UP_ABOVE_200`.
+Expected: price 110, SMA50 100, SMA200 100, score +1, Up, `TREND_UP_ABOVE_200`.
+
+### Price equal to SMA50 while price is above SMA200
+
+- `t-199` through `t-50`: 150 observations at 50
+- `t-49` through `t`: 50 observations at 100
+
+```text
+SMA50 = 100
+SMA200 = (150 × 50 + 50 × 100) / 200 = 62.5
+price == SMA50, so the strict +2 chain fails
+100 > 62.5
+```
+
+Expected: price 100, SMA50 100, SMA200 62.5, score +1, Up, `TREND_UP_ABOVE_200`.
+
+### Price equal to SMA50 while price is below SMA200
+
+- `t-199` through `t-50`: 150 observations at 150
+- `t-49` through `t`: 50 observations at 100
+
+```text
+SMA50 = 100
+SMA200 = (150 × 150 + 50 × 100) / 200 = 137.5
+price == SMA50, so the strict -2 chain fails
+100 < 137.5
+```
+
+Expected: price 100, SMA50 100, SMA200 137.5, score -1, Down, `TREND_DOWN_BELOW_200`.
+
+### SMA50 equal to SMA200 while price is below SMA200
+
+- `t-199` through `t-2`: 198 observations at 100
+- `t-1`: 110
+- price at `t`: 90
+
+```text
+SMA50 = (48 × 100 + 110 + 90) / 50 = 100
+SMA200 = (198 × 100 + 110 + 90) / 200 = 100
+90 < 100, and SMA50 < SMA200 is false
+```
+
+Expected: price 90, SMA50 100, SMA200 100, score -1, Down, `TREND_DOWN_BELOW_200`.
+
+A Trend calculation with 200 observations is accepted. 199 observations fail with `DATA_INSUFFICIENT_HISTORY`. An as-of date that is not in the market's series fails with `DATA_INVALID_DATE` and is not replaced by a neighbouring date. Rows after the as-of date are not inputs to either average.
 
 ## 3. Momentum Accelerating
 

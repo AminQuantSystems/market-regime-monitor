@@ -1,6 +1,6 @@
 # Interface concept
 
-**Status:** concept for owner review. No interface will be built in Phase 0.
+**Status:** Interface concept. No interface is implemented. Current project status is in `PROJECT_STATE.md`.
 
 ## Intent
 
@@ -21,8 +21,8 @@ MARKET | DIRECTION | MOMENTUM | VOL | RELATIVE | CHANGE
 Direction is the Trend state. It is a heading, not a second calculation. Examples:
 
 ```text
-NASDAQ 100  | STRONG UP | ACCELERATING  | ELEVATED | OUTPERFORM        | M ↑
-UK EQUITIES | DOWN      | DETERIORATING | HIGH     | STRONG OUTPERFORM | V ↑
+NASDAQ 100  | STRONG UP | ACCELERATING  | ELEVATED | OUTPERFORM        | M
+UK EQUITIES | DOWN      | DETERIORATING | HIGH     | STRONG OUTPERFORM | V
 ```
 
 The second row is a valid state. The market can be falling, with deteriorating pace and high realised volatility, and still be strongly ahead of the common ACWI benchmark.
@@ -56,20 +56,28 @@ Each row shows:
 
 The row must not say buy, sell, overweight, or underweight. Nothing required for the two-second reading may depend on a tooltip.
 
-The future row reads a `MarketRegimeSnapshot` and does not reformat the approved state labels:
+The future row reads the current snapshot and the change result. It does not reformat the approved state labels and it does not calculate them:
 
-- MARKET comes from `market_id`, later shown as the configured display name
-- DIRECTION comes from `trend.trend_state`
-- MOMENTUM comes from `momentum.momentum_state`
-- VOL comes from `volatility.volatility_regime`
-- RELATIVE comes from `relative_performance.relative_performance_state`
-- CHANGE is not available yet. What Changed will compare two snapshots in its own phase.
+- MARKET is the configured `display_name`, joined in presentation from `market_id`
+- DIRECTION is `current_snapshot.trend.trend_state`
+- MOMENTUM is `current_snapshot.momentum.momentum_state`
+- VOL is `current_snapshot.volatility.volatility_regime`
+- RELATIVE is `current_snapshot.relative_performance.relative_performance_state`
+- CHANGE is the change status plus the changed dimension letters
+
+CHANGE is presentation of a result that does not exist yet. `CHANGED` shows the letters that changed, in order: `D`, `M`, `V`, `R`. Examples are `M`, `D M`, `M V R`, and `D M V R`. `UNCHANGED` shows `—`. `UNAVAILABLE` shows `N/A`. The primary column does not use an arrow. An arrow would imply better or worse, and V1 does not make that judgement. Drill-down shows the words, such as Momentum Positive to Accelerating, and may say `No market-state change since previous session` only for `UNCHANGED`.
 
 ## What changed
 
-What Changed is not implemented. When it exists, a transition is a change in Direction, Momentum, Volatility, or Relative Performance. There is no composite-regime transition. If none of the four dimensions changed, and both complete states were calculated from at least 275 observations, the panel may say `No market-state change since previous session`.
+What Changed is designed and is not implemented. A transition is a change in Direction, Momentum, Volatility, or Relative Performance. There is no composite-regime transition. The comparison retains every changed dimension. It does not keep only one of them. The finance result stores the two snapshots and the transition labels. It does not store colours or the compact `D` `M` `V` `R` strings.
 
-The primary row may show a compact mark that a dimension changed. If space forces a choice, the presentation order is Direction, Momentum, Volatility, then Relative Performance. That order is not a financial weight and it is not a severity score. A drill-down lists the dimension, the previous label, and the new label. It does not invent a narrative.
+## Shared MEEM visual system
+
+Every MEEM finance and investment-technology product uses one visual system taken from the MEEM Technologies website. Market Regime Monitor is the first project that will define reusable MEEM design tokens, and that work waits for the UI phase. The website palette is inspected before any token is final. This concept does not set colour values.
+
+The shared system requires one base brand palette, the same colour for the same meaning in every tool, and shared background, surface, accent, border, typography, spacing, and control conventions. Styling stays restrained and institutional. It does not use a retail-trading red and green overload. Colour is never the only carrier of meaning: the text, state label, or symbol remains sufficient. Accessibility and legibility are mandatory. The two-second reading outranks decoration.
+
+What Changed logic contains no colour. A later screen may highlight a changed `D`, `M`, `V`, or `R` marker with those shared semantic tokens. The change model itself knows only the dimension and the two state labels.
 
 ## Leaders and laggards
 

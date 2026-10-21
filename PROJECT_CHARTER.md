@@ -2,7 +2,7 @@
 
 **Product:** Market Regime Monitor
 **Intended public repository name:** `market-regime-monitor`
-**Status:** Phase 0 — product and finance design. No application code.
+**Status:** Product charter. The repository contains the application library. Current phase and instrument status are in `PROJECT_STATE.md`. This charter is not a changelog.
 
 ## Product definition
 
@@ -59,7 +59,9 @@ Strong Up and Strong Down are Trend states. The interface may show them under th
 - Calculations use only information available on or before the observation date. No look-ahead.
 - Volatility describes magnitude. It does not make Trend more bullish or more bearish.
 
-## Out of scope for this phase
+## Original Phase 0 boundary
+
+The list below is the boundary from when this charter was written. It is not the current repository status.
 
 - Application code
 - Package installation

@@ -1,7 +1,7 @@
 # Finance specification — approved V1 model
 
 **Status:** owner-approved V1 finance rules.
-Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D implements realised volatility. Phase 1F implements Benchmark Relative Performance, including the boundary classification tolerance. Phase 1G implements the Market Regime Snapshot as orchestration only. What Changed is specified and is not implemented. There is no composite directional regime.
+Phase 1A implements deterministic validation of prices and configuration. Phase 1B implements Trend. Phase 1C implements Momentum. Phase 1D implements realised volatility. Phase 1F implements Benchmark Relative Performance, including the boundary classification tolerance. Phase 1G implements the Market Regime Snapshot as orchestration only. Phase 1H hardens snapshot identity checks. What Changed is designed and is not implemented. There is no composite directional regime.
 
 These rules replace the provisional Phase 0 proposal. Comparisons are exact. The financial definition uses no tolerance and no epsilon.
 
@@ -227,7 +227,7 @@ The regime needs today's RV21 and the previous 252 RV21 values, at `t-252` throu
 
 What Changed compares the complete regime at `t` with the complete regime at `t-1`. The regime at `t-1` needs a price at `(t-1)-273 = t-274`. Prices from `t-274` through `t` are 275 observations.
 
-- At 274 the current full state can be available. The previous full state cannot. `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
+- At 274 the current full state can be available. The previous full state cannot. The change status is `UNAVAILABLE` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
 - At 275 both the current full state and the previous full state can be available.
 
 The running validator rejects fewer than 274 observations with `DATA_INSUFFICIENT_HISTORY`. 273 and 272 both fail that gate. The 275 figure is the approved What Changed minimum. What Changed is not implemented, so 275 is not yet a validator gate.
@@ -496,15 +496,32 @@ The snapshot stores:
 
 It does not flatten those results and it does not copy their formulas. Direction is `trend.trend_state`. There is no second direction calculation. If a component raises `MarketDataError`, that same error propagates and no snapshot is returned. The function does not call `validate_market_data` and it does not restate a second history minimum. The binding length is the volatility regime, so a complete snapshot needs 274 aligned observations. 273 observations fail with `DATA_INSUFFICIENT_HISTORY`.
 
-A snapshot is one market at one as-of date. It does not contain the previous session. What Changed, when it exists, will compare two snapshots in a separate module.
+`calculate_market_regime_snapshot` is a selected-market calculation. The full-board workflow is to validate configuration, validate the complete panel once, then calculate one snapshot per board market from that canonical panel. Global validation is not repeated inside the snapshot. A sibling market that is absent or invalid does not change an independently calculated SPY snapshot when SPY and ACWI satisfy the component contracts. That separation is intentional.
 
-Every stored value comes from one of the four result objects. That makes the assembly traceable to the instrument that calculated it. This is not independent regulatory validation. The project uses staged adversarial review and regression testing. It has not undergone independent bank model validation or regulatory approval.
+After the four results are calculated, the snapshot is built only when every component `market_id` and `as_of_date` equals the request and the relative-performance `benchmark_id` equals the requested benchmark. A contradiction raises `MarketRegimeError` with `REGIME_COMPONENT_MISMATCH`. It is not relabelled as bad market data, and no partial snapshot is returned. The public component functions already stamp the requested identity. The check fails closed if an attached result contradicts that request.
+
+The outer `market_id` and `as_of_date` are the request. The measurements, states, and reason codes are the attached result objects, and those objects must name the same market and date. This is not independent regulatory validation. The project uses staged adversarial review and regression testing. It has not undergone independent bank model validation or regulatory approval.
+
+A snapshot is one market at one as-of date. It does not contain the previous session. What Changed, when it exists, will compare two snapshots in a separate module.
 
 The snapshot has no composite score, confidence, probability, AI regime, buy or sell instruction, recommendation, expected return, or position size.
 
 ## What changed
 
-Compare the latest complete observation with the immediately previous complete observation.
+Design approved. Not implemented.
+
+What Changed answers which of the four categorical market-state dimensions changed since the immediately previous trading observation. It compares two `MarketRegimeSnapshot` values. It performs no new finance calculation. It does not recalculate a moving average, a momentum return, RV21, a percentile, or an active return. It contains no colour.
+
+A state change exists only when one of these labels changes:
+
+- Direction, `TrendResult.trend_state`
+- Momentum, `MomentumResult.momentum_state`
+- Volatility, `VolatilityResult.volatility_regime`
+- Relative Performance, `RelativePerformanceResult.relative_performance_state`
+
+A measurement that moves without crossing a category is not a V1 event. RV21 moving from 0.181 to 0.187 while both readings stay Normal is not a volatility change. An active return moving from +0.031 to +0.041 while both readings stay Outperform is not a relative-performance change. Momentum moving from Positive to Accelerating is a change. The categorical rule keeps the two-second board quiet. It is a Market Regime Monitor convention. It is not an FCA material-change rule, and there is no separate numeric materiality score.
+
+Previous means the immediately preceding observation in the selected market's ordered series. It does not mean the calendar date minus one day. If the series contains Friday and then Monday, Monday's previous session is Friday. A calendar day that is absent from the validated series is not inferred. There is no weekend or holiday calendar.
 
 ### Current-state minimum history
 
@@ -514,34 +531,59 @@ Compare the latest complete observation with the immediately previous complete o
 
 ### What Changed minimum history
 
-- 275 valid price observations are required to calculate both the latest complete state and the immediately previous complete state.
-- At exactly 274 observations, the current state can succeed and the previous-session comparison is unavailable.
+- 275 valid price observations are required before both the latest complete state and the immediately previous complete state exist.
+- At exactly 274 observations, the current snapshot can succeed and the previous complete snapshot cannot.
 
-At exactly 274 observations the engine must not return:
+At exactly 274 observations the result must not say that nothing changed. No comparison has been made.
 
-```text
-No market-state change since previous session
-```
+### Statuses
 
-No valid comparison has been made. The result is:
+The result has exactly three statuses. They are not exceptions.
 
-```text
-change_status = unavailable
-```
+| Status | Meaning | Reason code |
+|---|---|---|
+| `CHANGED` | Both complete snapshots exist and at least one categorical label differs | `CHANGE_STATE_CHANGED` |
+| `UNCHANGED` | Both complete snapshots exist and all four categorical labels are equal | `CHANGE_NO_STATE_CHANGE` |
+| `UNAVAILABLE` | The current snapshot exists and the previous complete snapshot cannot be produced | `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY` |
 
-with reason code `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
+`CHANGED` and `UNCHANGED` are normal results. They are not raised as errors. `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY` remains the reason on the normal 274-observation `UNAVAILABLE` result. It is not an exception for that expected case. There is no `UNKNOWN`, `PROBABLY CHANGED`, `MAYBE`, or confidence status.
 
-The sentence `No market-state change since previous session` is produced only when all three of these are true:
+A genuine `MarketDataError` or `MarketRegimeError` from either snapshot still propagates. Only the approved shortage of previous history becomes `UNAVAILABLE`.
 
-- at least 275 valid observations exist
-- both the latest state and the previous state were calculated successfully
-- none of the four dimensions changed
+The sentence `No market-state change since previous session` is drill-down text for `UNCHANGED` only: at least 275 observations, both snapshots calculated, and none of the four labels changed. The primary board shows `—` for that case.
 
-Those four dimensions are Direction / Trend, Momentum, Volatility, and Benchmark Relative Performance. There is no composite-regime transition. A difference in any dimension is a categorical transition. Each transition names the dimension, the previous label, and the new label. Examples are Up to Strong Up, Positive to Accelerating, Normal to Elevated, and Neutral to Outperform.
+### Proposed objects
 
-A later primary board may show a compact mark that a dimension changed. If space forces a presentation order, it is Direction, then Momentum, then Volatility, then Relative Performance. That order is display priority only. It is not a financial weight and it is not a severity score.
+Not implemented.
 
-This comparison is specified here and is not implemented. The running validator enforces 274 observations. The 275 What Changed minimum is not a validator gate.
+`ComponentStateTransition` is frozen. Its fields are `dimension`, `previous_state`, and `current_state`. The dimension identifiers are `direction`, `momentum`, `volatility`, and `relative_performance`. It has no severity, importance, confidence, probability, score, or recommendation, and it does not say whether the move is good or bad. Volatility moving from Normal to High is a transition, not a universal judgement. Relative Performance moving from Underperform to Outperform does not set absolute direction. Momentum moving from Deteriorating to Mixed is reported as that pair of labels. The numbers and reason codes stay on the two snapshots.
+
+`MarketRegimeChange` is frozen. It keeps the snapshots rather than copying their measurements. Proposed fields:
+
+- `market_id`
+- `current_as_of_date`
+- `previous_as_of_date`
+- `change_status`
+- `current_snapshot`
+- `previous_snapshot`
+- `transitions`
+- `reason_code`
+
+For `UNAVAILABLE`, `previous_as_of_date` and `previous_snapshot` are null, `transitions` is empty, and `current_snapshot` is still present so the board can show today's state. For `UNCHANGED`, `transitions` is empty. For `CHANGED`, `transitions` contains every categorical change, in this order: direction, momentum, volatility, relative performance. That order is for stable reading. It is not a severity rank, a weight, or an importance score. All four transitions are kept when all four labels change. The result does not keep only a most-important change.
+
+### Proposed function
+
+Not implemented.
+
+`calculate_market_regime_change(prices, market_id, benchmark_id, as_of_date)` will calculate the current snapshot at the exact as-of date, find the immediately previous observation of that market, and return `UNAVAILABLE` with the current snapshot when only 274 observations exist through that date. When 275 or more exist, it calculates the previous snapshot at that previous observation, compares the four labels, and returns `CHANGED` or `UNCHANGED` with the ordered transitions. It does not hide an unrelated component error.
+
+### Board change field
+
+Presentation only. The finance result does not store the compact strings.
+
+If the status is `CHANGED`, the primary column lists the changed dimensions in the fixed order, using `D`, `M`, `V`, and `R`. Examples are `M`, `D M`, and `M V R`. All four changes display as `D M V R`. If the status is `UNCHANGED`, the column is `—`. If the status is `UNAVAILABLE`, the column is `N/A`. The primary column does not use an arrow to imply better or worse. Drill-down shows the words, for example Momentum Positive to Accelerating.
+
+This comparison is not implemented. The running validator enforces 274 observations. The 275 What Changed minimum is not a validator gate.
 
 ## Freshness and reproducibility
 
@@ -675,8 +717,14 @@ Specified for Benchmark Relative Performance calculation, and not regime labels:
 - `DATA_BENCHMARK_EXCLUDED`
 - `DATA_INVALID_ACTIVE_RETURN`
 
-Specified for the later What Changed phase, and not current behaviour:
+Specified for snapshot orchestration, and not a market-data failure:
 
+- `REGIME_COMPONENT_MISMATCH`
+
+Specified for the later What Changed result, and not current behaviour. These are result reason codes, not exceptions for a normal comparison:
+
+- `CHANGE_STATE_CHANGED`
+- `CHANGE_NO_STATE_CHANGE`
 - `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`
 
 ## Determinism requirements

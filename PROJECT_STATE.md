@@ -7,7 +7,7 @@
 
 ## Phase
 
-Phase 1G — Market Regime Snapshot orchestration implemented.
+Phase 1H — Snapshot integrity hardened. What Changed design approved; not implemented.
 
 ## What exists
 
@@ -26,9 +26,9 @@ Phase 1G — Market Regime Snapshot orchestration implemented.
 
 The validator accepts 274 observations and rejects 273 and 272 with `DATA_INSUFFICIENT_HISTORY`.
 
-274 observations are the full current-state minimum. The earliest reference RV21, at `t-252`, needs the price at `t-273`. The planned complete What Changed minimum is 275. At 274 the current full state can be available and the previous full state cannot, so `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. `No market-state change since previous session` is allowed only when at least 275 observations exist, both states were calculated, and none of the four dimensions changed: Direction / Trend, Momentum, Volatility, and Benchmark Relative Performance.
+274 observations are the full current-state minimum. The earliest reference RV21, at `t-252`, needs the price at `t-273`. The complete What Changed minimum is 275. At 274 the current snapshot can exist and the previous complete snapshot cannot, so the designed status is `UNAVAILABLE` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. `No market-state change since previous session` is drill-down text only for `UNCHANGED`, when at least 275 observations exist, both snapshots were calculated, and none of the four categorical labels changed: Direction, Momentum, Volatility, and Benchmark Relative Performance.
 
-An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed itself is not implemented. The local project folder has not been renamed.
+An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed is designed and is not implemented. The local project folder has not been renamed.
 
 ## Validation contract
 
@@ -46,15 +46,15 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 - Momentum: implemented
 - Volatility: implemented. RV21 uses 21 zero-mean log returns and annualises with 252. The regime percentile is `100 * (L + 0.5 * E) / 252`, a Market Regime Monitor half-weight tie convention. A history in which every RV21 equals today's value is percentile 50 and Normal.
 - Benchmark Relative Performance: implemented and numerically hardened. The measure is the 63-observation active return against ACWI, the common V1 comparison benchmark. Classification treats a value within `1e-12` of +0.05, +0.02, -0.02, or -0.05 as that threshold. The stored active return stays at full precision. ACWI is not the mandate-specific benchmark for every regional market.
-- Market Regime Snapshot: implemented. It assembles `TrendResult`, `MomentumResult`, `VolatilityResult`, and `RelativePerformanceResult` for one market and one as-of date. It adds no finance methodology. Direction is `trend.trend_state`. No composite directional regime exists. This assembly is not independent bank model validation or regulatory approval.
-- What Changed: not implemented
+- Market Regime Snapshot: implemented and integrity-hardened. It assembles `TrendResult`, `MomentumResult`, `VolatilityResult`, and `RelativePerformanceResult` for one selected market and one as-of date. It does not call full-board validation. A component identity that contradicts the request fails with `MarketRegimeError` and `REGIME_COMPONENT_MISMATCH`. Direction is `trend.trend_state`. No composite directional regime exists. This assembly is not independent bank model validation or regulatory approval.
+- What Changed: DESIGN APPROVED — NOT IMPLEMENTED. It will compare the four categorical labels on two snapshots. It will not calculate finance.
 - UI: not implemented
 - Live or vendor market data: not implemented
 - Backtesting: not implemented
 - Mac integration: not authorised
 - GitHub publication: none
-- Full current-state and snapshot minimum: 274
-- Planned complete What Changed minimum: 275
+- Current snapshot minimum: 274
+- Complete What Changed minimum: 275
 
 ## Data and operations
 
@@ -66,8 +66,8 @@ An observation later than `evaluation_date` is `DATA_FUTURE_DATE`. What Changed 
 
 ## Local orchestration timing
 
-One local measurement on 21 October 2026, Python 3.14, this Windows machine: assembling snapshots for SPY, QQQ, IWM, EWU, EWG, EWJ, and EEM from one synthetic 274-observation panel took 0.22 seconds. The panel also contained ACWI. This is diagnostic evidence only. It is not a pass/fail limit, and it does not authorise a Mac worker or parallel execution.
+One local measurement on 21 October 2026, Python 3.14, this Windows machine: assembling snapshots for SPY, QQQ, IWM, EWU, EWG, EWJ, and EEM from one synthetic 274-observation panel took 0.22 seconds. The panel also contained ACWI. This is diagnostic evidence only. It is not a pass/fail limit. This seven-market snapshot workload provides no evidence that Mac offload is justified. No concurrency and no multiprocessing have been added. A later Mac measurement may matter for a large historical backtest, a parameter sweep, a scenario grid, or another large multi-period research workload. It is not relevant to the current seven-market snapshot.
 
 ## Next approved action
 
-Stop after Phase 1G. Do not implement What Changed or UI until that work is authorised.
+Stop after this design. Do not implement What Changed or UI until that work is authorised.

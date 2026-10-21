@@ -343,7 +343,7 @@ An exact as-of date is required. A later block of extreme adjusted closes does n
 
 ### 9i. 274 current state, 275 What Changed
 
-At 274 prices the current full state can be calculated, and the previous full state cannot. `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. The text is not `No market-state change since previous session`.
+At 274 prices the current full state can be calculated, and the previous full state cannot. The change status is `UNAVAILABLE` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. The text is not `No market-state change since previous session`.
 
 At 275 prices both states can be calculated. A constant `adjusted_close` of 100 across those 275 dates keeps every category unchanged, including Volatility Normal, so that sentence is allowed only in that complete comparison.
 
@@ -516,6 +516,44 @@ The same 274 dates. ACWI is 100 on every date. SPY is 100 except the close 63 ob
 
 The snapshot retains Strong Up and Deteriorating together. Volatility stays the volatility instrument's own result.
 
+A component result whose market id, as-of date, or benchmark id contradicts the request does not become a snapshot. The orchestration error is `MarketRegimeError` with `REGIME_COMPONENT_MISMATCH`.
+
+## 13. What Changed
+
+Design only. These cases are not implemented and have no Python tests yet. What Changed compares categorical labels on two snapshots. It does not calculate finance.
+
+1. **274 observations.** The current snapshot is valid. The change status is `UNAVAILABLE`. The reason is `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`. The previous snapshot is null, the transition list is empty, and the current snapshot is present. The result does not say that nothing changed.
+
+2. **275 observations, same four labels.** The status is `UNCHANGED`. The transition list is empty. The reason is `CHANGE_NO_STATE_CHANGE`. Drill-down may say `No market-state change since previous session`. The primary column is `—`.
+
+3. **Direction only.** Up becomes Strong Up. One transition, dimension `direction`. Status `CHANGED`, reason `CHANGE_STATE_CHANGED`. The primary column is `D`.
+
+4. **Momentum only.** Positive becomes Accelerating. Dimension `momentum`. The primary column is `M`.
+
+5. **Volatility only.** Normal becomes Elevated. Dimension `volatility`. The primary column is `V`. The result does not call the move better or worse.
+
+6. **Relative Performance only.** Neutral becomes Outperform. Dimension `relative_performance`. The primary column is `R`. The result does not treat that as an absolute direction.
+
+7. **Direction and Momentum.** Both transitions are kept, direction first, then momentum. The primary column is `D M`.
+
+8. **All four dimensions.** Up to Strong Up, Positive to Accelerating, Normal to Elevated, and Neutral to Outperform. All four transitions are kept in the order direction, momentum, volatility, relative performance. The primary column is `D M V R`.
+
+9. **Numbers move inside the same labels.** RV21 moves while Volatility stays Normal, and the active return moves while Relative Performance stays Outperform. The other labels are also unchanged. The status is `UNCHANGED` and the transition list is empty.
+
+10. **Friday then Monday.** The observation series contains Friday and the next row is Monday. The current date is Monday. The previous date is Friday, the preceding observation, not Sunday and not a calendar subtraction.
+
+11. **Rows after the as-of date.** Extreme later prices on the requested market, ACWI, and another market leave the current and previous change result equal.
+
+12. **Another market.** Extreme prices on an unrelated market leave the requested change result equal.
+
+13. **Caller input.** A successful comparison and a failing comparison leave the caller's frame unchanged.
+
+14. **Repeat.** The same prices, market, benchmark, and as-of date produce the same change result.
+
+15. **Wrong benchmark.** A benchmark other than ACWI propagates `CONFIG_WRONG_BENCHMARK`. It does not become `UNAVAILABLE`.
+
+16. **Invalid current as-of date.** A missing as-of date propagates `DATA_INVALID_DATE`. It does not become `UNAVAILABLE`.
+
 ## 16. Validator: 274 observations accepted
 
 Every required series has the same 274 dates and a finite positive `adjusted_close` on each. `evaluation_date` equals the last date.
@@ -526,7 +564,7 @@ Expected: the panel is accepted. This is the full current-state minimum. What Ch
 
 The same aligned fixture with 274 observations per required series, and `evaluation_date` equal to the last date.
 
-Expected: the current full state can be calculated. The previous full state cannot. `change_status = unavailable` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
+Expected: the current full state can be calculated. The previous full state cannot. The change status is `UNAVAILABLE` with `CHANGE_PREVIOUS_STATE_INSUFFICIENT_HISTORY`.
 
 The result must not be `No market-state change since previous session`.
 
@@ -534,7 +572,7 @@ The result must not be `No market-state change since previous session`.
 
 Every required series is a constant `adjusted_close` of 100 across all 275 dates. `evaluation_date` equals the last date.
 
-Expected once What Changed exists: both states are calculated, every categorical label is unchanged, and the comparison text is exactly `No market-state change since previous session`.
+Expected once What Changed exists: both states are calculated, every categorical label is unchanged, the status is `UNCHANGED`, the transition list is empty, and the drill-down text is exactly `No market-state change since previous session`. The primary column is `—`.
 
 On this constant panel the labels on both dates are Trend Neutral, score 0, Momentum Mixed, Volatility Normal, and Benchmark Relative Performance Neutral. The active return is 0 because every market, including ACWI, is unchanged. Volatility is Normal because every RV21 is 0, `L = 0`, `E = 252`, and the percentile is 50. None of the four dimensions changed.
 

@@ -165,8 +165,10 @@ def test_verification_token_rejects_expiry_signature_purpose_and_future_cap() ->
         validate_verification(expired, KEY, now=NOW)
     assert caught.value.code == "DEMO_VERIFY_EXPIRED"
     assert expired_at == NOW - 1
+    segment, signature = token.split(".", 1)
+    broken_signature = ("A" if not signature.startswith("A") else "B") + signature[1:]
     with pytest.raises(Exception) as bad_signature:
-        validate_verification(token[:-1] + ("A" if token[-1] != "A" else "B"), KEY, now=NOW)
+        validate_verification(f"{segment}.{broken_signature}", KEY, now=NOW)
     assert bad_signature.value.code == "DEMO_VERIFY_INVALID"
     wrong_purpose = sign_payload(KEY, {"exp": NOW + 60, "jti": "j", "purpose": "other", "request_id": "request-1", "v": 1})
     with pytest.raises(Exception) as purpose:

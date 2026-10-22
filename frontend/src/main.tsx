@@ -1,6 +1,7 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { AccessPage } from "./access/AccessPage"
+import { PrivacyPage } from "./access/PrivacyPage"
 import { App } from "./app/App"
 import "./styles/global.css"
 
@@ -9,8 +10,5 @@ if (!root) {
   throw new Error("root element is missing")
 }
 const path = window.location.pathname.replace(/\/$/, "") || "/"
-createRoot(root).render(
-  <StrictMode>
-    {path === "/access" ? <AccessPage /> : <App />}
-  </StrictMode>,
-)
+const page = path === "/access" ? <AccessPage /> : path === "/privacy" ? <PrivacyPage /> : <App />
+createRoot(root).render(<StrictMode>{page}</StrictMode>)

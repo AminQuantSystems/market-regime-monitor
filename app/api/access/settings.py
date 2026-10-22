@@ -8,6 +8,9 @@ COOKIE_NAME = "meem_demo_session"
 MIN_SIGNING_KEY_CHARACTERS = 43
 MIN_DISTINCT_CHARACTERS = 10
 DEFAULT_ANALYSE_LIMIT = 30
+DEFAULT_REQUEST_LIMIT = 5
+DEFAULT_COOLDOWN_MINUTES = 10
+DEFAULT_EMAIL_DAILY_LIMIT = 50
 
 
 def flag(name: str, default: str = "0") -> bool:
@@ -57,12 +60,49 @@ def contact_email() -> str | None:
     return value or None
 
 
-def analyse_limit_per_hour() -> int:
-    raw = os.environ.get("MEEM_DEMO_ANALYSE_LIMIT_PER_HOUR", str(DEFAULT_ANALYSE_LIMIT)).strip()
+def _positive_int(name: str, default: int) -> int:
+    raw = os.environ.get(name, str(default)).strip()
     try:
         value = int(raw)
     except ValueError:
-        return DEFAULT_ANALYSE_LIMIT
+        return default
     if value < 1:
-        return DEFAULT_ANALYSE_LIMIT
+        return default
     return value
+
+
+def analyse_limit_per_hour() -> int:
+    return _positive_int("MEEM_DEMO_ANALYSE_LIMIT_PER_HOUR", DEFAULT_ANALYSE_LIMIT)
+
+
+def request_limit_per_hour() -> int:
+    return _positive_int("MEEM_DEMO_REQUEST_LIMIT_PER_HOUR", DEFAULT_REQUEST_LIMIT)
+
+
+def verification_cooldown_seconds() -> int:
+    return _positive_int("MEEM_DEMO_VERIFICATION_COOLDOWN_MINUTES", DEFAULT_COOLDOWN_MINUTES) * 60
+
+
+def email_daily_limit() -> int:
+    return _positive_int("MEEM_DEMO_EMAIL_DAILY_LIMIT", DEFAULT_EMAIL_DAILY_LIMIT)
+
+
+def public_base_url() -> str:
+    return os.environ.get("MEEM_DEMO_PUBLIC_BASE_URL", "").strip().rstrip("/")
+
+
+def hubspot_service_key() -> str:
+    return os.environ.get("HUBSPOT_SERVICE_KEY", "").strip()
+
+
+def owner_email() -> str | None:
+    value = os.environ.get("MEEM_DEMO_OWNER_EMAIL", "").strip()
+    return value or None
+
+
+def azure_email_connection() -> str:
+    return os.environ.get("AZURE_COMMUNICATION_CONNECTION_STRING", "").strip()
+
+
+def azure_email_sender() -> str:
+    return os.environ.get("AZURE_EMAIL_SENDER", "").strip()

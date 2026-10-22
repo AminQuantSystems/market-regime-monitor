@@ -1,0 +1,41 @@
+name: Container smoke
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the production image
+        run: docker build -t market-regime-monitor:gated-demo .
+      - name: Exercise the gated container
+        run: |
+          set -euo pipefail
+          key="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          docker run -d --name demo -p 8000:8000 \
+            -e MEEM_SERVE_FRONTEND=1 \
+            -e MEEM_DEMO_ACCESS_REQUIRED=1 \
+            -e MEEM_DEMO_COOKIE_SECURE=1 \
+            -e MEEM_DEMO_ANALYSE_LIMIT_PER_HOUR=30 \
+            -e MEEM_DEMO_SIGNING_KEY="$key" \
+            market-regime-monitor:gated-demo
+          ready=0
+          for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
+            if curl -fsS http://127.0.0.1:8000/healthz >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          test "$ready" = "1"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/)" = "302"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/access)" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8000/api/v1/market-regime/analyse)" = "401"
+          docker logs demo
+          docker rm -f demo >/dev/null

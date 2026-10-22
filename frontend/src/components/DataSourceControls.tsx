@@ -140,6 +140,7 @@ export function DataSourceControls({
         <button className={styles.action} type="button" onClick={onReturn}>
           RETURN TO DEMO
         </button>
+        <p className={styles.warning}>Public demonstration — do not upload confidential, personal or client data.</p>
         <p id="analyse-requirements" className={styles.hint}>
           Requires a CSV file, an evaluation date, and an as-of date.
         </p>

@@ -8,6 +8,7 @@ interface ApplicationHeaderProps {
   benchmarkId: string | null
   universeSize: number | null
   validationStatus: "VALID" | null
+  onEndSession: () => void
 }
 
 export function ApplicationHeader({
@@ -18,6 +19,7 @@ export function ApplicationHeader({
   benchmarkId,
   universeSize,
   validationStatus,
+  onEndSession,
 }: ApplicationHeaderProps) {
   const showFacts = asOfDate !== null && benchmarkId !== null && universeSize !== null
   return (
@@ -63,6 +65,9 @@ export function ApplicationHeader({
           ) : null}
         </dl>
       ) : null}
+      <button className={styles.endSession} type="button" onClick={onEndSession}>
+        End Demo Session
+      </button>
     </header>
   )
 }

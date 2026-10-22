@@ -2,7 +2,7 @@
 
 FROM node:24-bookworm-slim AS frontend
 WORKDIR /src/frontend
-COPY MEEM_DESIGN_TOKENS.json /MEEM_DESIGN_TOKENS.json
+COPY MEEM_DESIGN_TOKENS.json /src/MEEM_DESIGN_TOKENS.json
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./

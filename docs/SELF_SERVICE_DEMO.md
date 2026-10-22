@@ -8,7 +8,7 @@ This is not a user-account system. There is no password, no database, and no mar
 
 1. `POST /api/v1/demo-access/request` validates the form.
 2. A hidden honeypot field that contains text returns the same success response and does nothing else.
-3. The contact and company are written to HubSpot.
+3. The contact and company are written to HubSpot. A new contact records the lawful basis in `docs/DEMO_LIA.md`. An existing contact keeps its current lawful basis.
 4. A verification link is emailed. The token is in the URL fragment `#verify=`, not the query string.
 5. `POST /api/v1/demo-access/verify` checks the signature, purpose, expiry, request id, and the single-use verification id stored in HubSpot.
 6. A normal 14-day demonstration session cookie is set. The long-lived token is not emailed.

@@ -18,6 +18,7 @@ from app.integrations.hubspot.client import HubSpotError
 
 logger = logging.getLogger(__name__)
 
+LAWFUL_BASIS = "Legitimate interest \u2013 prospect/lead"
 UNAVAILABLE = "Demonstration requests are temporarily unavailable."
 WAIT = "Please wait before requesting demonstration access again."
 INVALID_REQUEST = "This request could not be accepted."
@@ -144,11 +145,12 @@ def request_demonstration(
     properties = _contact_properties(lead, request_id, verification_id, requested_ms)
     try:
         if existing is None:
+            properties["hs_legal_basis"] = LAWFUL_BASIS
             created = hubspot.create_contact(properties)
             contact_id = str(created.get("id") or "")
         else:
             contact_id = str(existing.get("id") or "")
-            hubspot.update_contact(contact_id, properties)
+            _update_contact(hubspot, contact_id, properties, existing)
         if not contact_id:
             raise HubSpotError("contact_id", 0)
         _associate_company(hubspot, contact_id, lead["email"], lead["organisation"])
@@ -158,18 +160,35 @@ def request_demonstration(
     link = f"{public_base}/access#verify={verification_token}" if public_base else ""
     gate.remember_email(lead["email"], now)
     if not link or not mailer.configured():
-        _mark_email_failed(hubspot, contact_id)
+        _mark_email_failed(hubspot, contact_id, existing)
         raise APIError(503, "DEMO_EMAIL_UNAVAILABLE", UNAVAILABLE)
     try:
-        hubspot.update_contact(contact_id, {"meem_demo_status": "EMAIL_VERIFICATION_SENT"})
+        _update_contact(hubspot, contact_id, {"meem_demo_status": "EMAIL_VERIFICATION_SENT"}, existing)
     except HubSpotError:
         raise APIError(503, "DEMO_CRM_UNAVAILABLE", UNAVAILABLE) from None
     gate.remember_send(now)
     try:
         mailer.send_verification(to=lead["email"], first_name=lead["first_name"], link=link)
     except EmailError:
-        _mark_email_failed(hubspot, contact_id)
+        _mark_email_failed(hubspot, contact_id, existing)
         raise APIError(503, "DEMO_EMAIL_UNAVAILABLE", UNAVAILABLE) from None
+
+
+def _update_contact(hubspot: Any, contact_id: str, properties: dict[str, str], contact: dict[str, Any] | None) -> None:
+    try:
+        hubspot.update_contact(contact_id, properties)
+    except HubSpotError as exc:
+        if _basis_refused(contact, exc):
+            logger.error(
+                "HubSpot refused the update because the existing contact has no hs_legal_basis and the portal requires one. No basis was written."
+            )
+        raise
+
+
+def _basis_refused(contact: dict[str, Any] | None, exc: HubSpotError) -> bool:
+    if contact is None or exc.operation != "update_contact" or "hs_legal_basis" not in exc.missing_properties:
+        return False
+    return not str(_properties(contact).get("hs_legal_basis") or "").strip()
 
 
 def _within_cooldown(contact: dict[str, Any] | None, now: int, cooldown_seconds: int) -> bool:
@@ -181,9 +200,14 @@ def _within_cooldown(contact: dict[str, Any] | None, now: int, cooldown_seconds:
     return now * 1000 - requested < cooldown_seconds * 1000
 
 
-def _mark_email_failed(hubspot: Any, contact_id: str) -> None:
+def _mark_email_failed(hubspot: Any, contact_id: str, contact: dict[str, Any] | None) -> None:
     try:
-        hubspot.update_contact(contact_id, {"meem_demo_status": "EMAIL_FAILED", "meem_demo_verification_jti": "consumed"})
+        _update_contact(
+            hubspot,
+            contact_id,
+            {"meem_demo_status": "EMAIL_FAILED", "meem_demo_verification_jti": "consumed"},
+            contact,
+        )
     except HubSpotError:
         logger.warning("Demonstration request status could not be marked failed.")
 
@@ -237,7 +261,8 @@ def verify_demonstration(
         raise APIError(401, "DEMO_INVITE_REVOKED", "This invitation is no longer valid.")
     contact_id = str(contact.get("id") or "")
     try:
-        hubspot.update_contact(
+        _update_contact(
+            hubspot,
             contact_id,
             {
                 "meem_demo_verified_at": str(now * 1000),
@@ -246,6 +271,7 @@ def verify_demonstration(
                 "meem_demo_status": "ACCESS_GRANTED",
                 "meem_demo_verification_jti": "consumed",
             },
+            contact,
         )
     except HubSpotError:
         raise APIError(503, "DEMO_CRM_UNAVAILABLE", UNAVAILABLE) from None

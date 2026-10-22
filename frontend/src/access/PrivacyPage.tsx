@@ -36,10 +36,12 @@ export function PrivacyPage() {
           Technical information required to operate and protect the service, including a session cookie and request limits, is also processed.
         </p>
         <p className={styles.copy}>
-          Those details are used to administer the demonstration access you requested, to prevent abuse, and to respond to and follow up regarding that request.
+          MEEM relies on legitimate interests to process the limited information needed to administer the demonstration you requested, verify demonstration access, protect the demonstration against misuse, and respond to and follow up regarding that specific request.
+        </p>
+        <p className={styles.copy}>
+          You have the right to object to processing based on legitimate interests. Requesting demonstration access does not subscribe you to marketing.
         </p>
         <p className={styles.copy}>HubSpot is used for customer-relationship and lead administration. Microsoft Azure is used for hosting and for the transactional verification email.</p>
-        <p className={styles.copy}>Requesting demonstration access does not subscribe you to a marketing list.</p>
         <p className={styles.copy}>
           {email ? (
             <>

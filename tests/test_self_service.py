@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.access.companies import company_identity
-from app.api.access.leads import _millis, _within_cooldown
+from app.api.access.leads import LAWFUL_BASIS, _millis, _within_cooldown
 from app.api.access.tokens import issue_invitation, sign_payload
 from app.api.access.verification import issue_verification, validate_verification
 from app.api.main import create_app
@@ -35,6 +35,8 @@ class Crm:
         self.companies: list[dict] = []
         self.associations: list[tuple[str, str]] = []
         self.fail_on: set[str] = set()
+        self.refuse_update_without_basis = False
+        self.writes: list[tuple[str, dict[str, str]]] = []
         self._next = 1
 
     def _guard(self, operation: str) -> None:
@@ -59,13 +61,17 @@ class Crm:
 
     def create_contact(self, properties: dict[str, str]) -> dict:
         self._guard("create_contact")
+        self.writes.append(("create_contact", dict(properties)))
         contact = {"id": self._new_id(), "properties": dict(properties)}
         self.contacts.append(contact)
         return contact
 
     def update_contact(self, contact_id: str, properties: dict[str, str]) -> None:
         self._guard("update_contact")
+        self.writes.append(("update_contact", dict(properties)))
         contact = next(item for item in self.contacts if item["id"] == contact_id)
+        if self.refuse_update_without_basis and not str(contact["properties"].get("hs_legal_basis") or "").strip():
+            raise HubSpotError("update_contact", 400, missing_properties=("hs_legal_basis",))
         contact["properties"].update(properties)
 
     def find_company_by_domain(self, domain: str) -> dict | None:
@@ -154,6 +160,13 @@ def _token(mail: Mail) -> str:
 
 HUBSPOT_REQUESTED_AT = "2026-10-22T17:24:07.991Z"
 HUBSPOT_REQUESTED_MS = 1_792_689_847_991
+MARKETING_FIELDS = frozenset({"hs_marketable_status", "hs_marketable_reason_id", "hs_email_optout"})
+
+
+def _assert_no_marketing_write(crm: Crm) -> None:
+    assert crm.writes
+    for _kind, payload in crm.writes:
+        assert MARKETING_FIELDS.isdisjoint(payload)
 
 
 def test_millis_accepts_digits_and_timezone_aware_iso() -> None:
@@ -231,6 +244,18 @@ def test_hubspot_client_uses_exact_email_company_lookup_and_default_association(
     assert "/crm/objects/2026-09/contacts/" in calls[0][1]
     assert calls[2][1].endswith("/crm/objects/2026-09/companies/search")
     assert "/contact/10/associations/default/company/20" in calls[4][1]
+    refused = HubSpotClient(
+        "service-key",
+        transport=lambda method, url, payload: (
+            400,
+            {"category": "VALIDATION_ERROR", "message": "required properties were missing: [hs_legal_basis]"},
+        ),
+    )
+    with pytest.raises(HubSpotError) as missing_basis:
+        refused.create_contact({"email": "ada@example.com"})
+    assert missing_basis.value.status == 400
+    assert missing_basis.value.missing_properties == ("hs_legal_basis",)
+    assert "prospect" not in str(missing_basis.value)
 
 
 def test_email_sender_builds_verification_without_calling_azure_when_injected() -> None:
@@ -294,7 +319,16 @@ def test_request_limits(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_contact_deduplication_company_and_free_email(monkeypatch: pytest.MonkeyPatch) -> None:
     client, crm, mail = _client(monkeypatch, MEEM_DEMO_VERIFICATION_COOLDOWN_MINUTES="10")
-    crm.contacts.append({"id": "9", "properties": {"email": "ada@example.com", "meem_demo_requested_at": "1"}})
+    crm.contacts.append(
+        {
+            "id": "9",
+            "properties": {
+                "email": "ada@example.com",
+                "meem_demo_requested_at": "1",
+                "hs_legal_basis": "Legitimate interest \u2013 existing customer",
+            },
+        }
+    )
     crm.companies.append({"id": "4", "properties": {"name": "Existing", "domain": "example.com"}})
     response = client.post("/api/v1/demo-access/request", json=LEAD)
     assert response.status_code == 200
@@ -302,6 +336,11 @@ def test_contact_deduplication_company_and_free_email(monkeypatch: pytest.Monkey
     assert crm.contacts[0]["id"] == "9"
     assert crm.contacts[0]["properties"]["firstname"] == "Ada"
     assert crm.contacts[0]["properties"]["jobtitle"] == "Researcher"
+    assert crm.contacts[0]["properties"]["hs_legal_basis"] == "Legitimate interest \u2013 existing customer"
+    updates = [payload for kind, payload in crm.writes if kind == "update_contact"]
+    assert updates
+    assert all("hs_legal_basis" not in payload for payload in updates)
+    _assert_no_marketing_write(crm)
     assert crm.contacts[0]["properties"]["meem_demo_status"] == "EMAIL_VERIFICATION_SENT"
     assert crm.associations == [("9", "4")]
     assert len(crm.companies) == 1
@@ -311,7 +350,26 @@ def test_contact_deduplication_company_and_free_email(monkeypatch: pytest.Monkey
     created = free.post("/api/v1/demo-access/request", json={**LEAD, "email": "ada@gmail.com", "organisation": "Independent Office"})
     assert created.status_code == 200
     assert free_crm.companies[0]["properties"] == {"name": "Independent Office"}
+    created_payloads = [payload for kind, payload in free_crm.writes if kind == "create_contact"]
+    assert created_payloads[0]["hs_legal_basis"] == "Legitimate interest \u2013 prospect/lead"
+    assert created_payloads[0]["hs_legal_basis"] == LAWFUL_BASIS
+    assert "\u2013" in LAWFUL_BASIS
+    assert all("hs_legal_basis" not in payload for kind, payload in free_crm.writes if kind == "update_contact")
+    _assert_no_marketing_write(free_crm)
     assert free_crm.associations
+
+
+def test_existing_contact_without_lawful_basis_is_not_assigned_one(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
+    client, crm, mail = _client(monkeypatch)
+    crm.refuse_update_without_basis = True
+    crm.contacts.append({"id": "9", "properties": {"email": "ada@example.com"}})
+    response = client.post("/api/v1/demo-access/request", json=LEAD)
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "DEMO_CRM_UNAVAILABLE"
+    assert "hs_legal_basis" not in crm.contacts[0]["properties"]
+    assert all("hs_legal_basis" not in payload for _kind, payload in crm.writes)
+    assert mail.verification == []
+    assert "No basis was written." in caplog.text
 
 
 def test_email_failure_does_not_grant_access(monkeypatch: pytest.MonkeyPatch) -> None:

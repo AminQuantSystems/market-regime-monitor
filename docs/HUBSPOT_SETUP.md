@@ -45,6 +45,8 @@ Use the existing Contact information group. Set the internal name exactly. For t
 
 Do not create `meem_demo_product`, `meem_demo_source`, or `meem_demo_email_type`. Name, email, job title, company name, and company domain use HubSpot’s standard properties.
 
+A new contact is also given the existing standard property `hs_legal_basis`, using the internal value `Legitimate interest – prospect/lead`. The en dash is part of that value. An existing contact keeps whatever lawful basis is already stored. The application does not replace it, and it does not supply one when HubSpot refuses an update of a contact that has none. See `docs/DEMO_LIA.md`. Leave the portal requirement enabled.
+
 The free account’s published allowance is 10 custom properties in total. These eight are the ceiling for this integration. Leave the remaining capacity unused.
 
 Check them, without creating anything, with:

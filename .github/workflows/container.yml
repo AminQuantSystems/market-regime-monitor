@@ -26,17 +26,3 @@ jobs:
           tags: |
             ghcr.io/aminquantsystems/market-regime-monitor:${{ github.sha }}
             ghcr.io/aminquantsystems/market-regime-monitor:main
-      - name: Make the package public and keep it linked to this repository
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          for attempt in 1 2 3 4 5; do
-            if gh api --method PATCH -H "Accept: application/vnd.github+json" \
-              "/users/AminQuantSystems/packages/container/market-regime-monitor" \
-              -f visibility=public; then
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "The image was published. Package visibility still needs an owner check."
-          exit 1

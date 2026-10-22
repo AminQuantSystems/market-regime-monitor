@@ -25,7 +25,11 @@ export async function analyseBoard(input: {
   if (input.prices) {
     body.set("prices", input.prices)
   }
-  const response = await fetch("/api/v1/market-regime/analyse", { method: "POST", body })
+  const response = await fetch("/api/v1/market-regime/analyse", {
+    method: "POST",
+    body,
+    credentials: "same-origin",
+  })
   const payload: BoardResponse | ApiErrorBody = await response.json()
   if (!response.ok) {
     const error = (payload as ApiErrorBody).error

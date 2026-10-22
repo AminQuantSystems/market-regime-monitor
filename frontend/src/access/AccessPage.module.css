@@ -1,0 +1,70 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  background: var(--meem-dark-canvas);
+  color: var(--meem-brand-white);
+}
+
+.panel {
+  width: min(640px, 100%);
+  padding: 32px 28px;
+  background: var(--meem-dark-surface-1);
+  border-top: 3px solid var(--meem-brand-deep-sapphire);
+}
+
+.mark {
+  width: 24px;
+  height: auto;
+}
+
+.product {
+  margin: 16px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.title {
+  margin: 8px 0 0;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.copy,
+.support,
+.disclaimer,
+.notice {
+  color: var(--meem-dark-text-secondary);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.notice {
+  color: var(--meem-dark-text-primary);
+}
+
+.request {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 10px 14px;
+  color: var(--meem-brand-white);
+  background: var(--meem-brand-deep-sapphire);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+
+.support,
+.disclaimer {
+  font-size: 12px;
+}
+
+.disclaimer {
+  margin-bottom: 0;
+  color: var(--meem-dark-text-muted);
+}

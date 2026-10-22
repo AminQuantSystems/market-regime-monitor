@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 
 from market_state.change import calculate_market_regime_change
 from market_state.validation import REQUIRED_BENCHMARK, REQUIRED_BOARD_MARKETS, validate_configuration, validate_market_data
+
+from app.api.access.routes import enforce_analyse_limit
 
 from app.api.configuration import v1_configuration
 from app.api.errors import APIError
@@ -22,6 +24,7 @@ async def analyse(
     evaluation_date: str = Form(...),
     as_of_date: str = Form(...),
     prices: UploadFile | None = File(None),
+    _limit: None = Depends(enforce_analyse_limit),
 ) -> BoardResponse:
     if data_source not in {"demo", "upload"}:
         raise APIError(400, "API_INVALID_DATA_SOURCE", "data_source must be demo or upload")

@@ -78,3 +78,16 @@
   font-size: 13px;
   font-weight: 600;
 }
+
+.endSession {
+  align-self: flex-end;
+  margin: 0;
+  padding: 0;
+  color: var(--meem-dark-text-muted);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}

@@ -19,6 +19,7 @@ CONTACT_PROPERTIES = (
     "firstname",
     "lastname",
     "jobtitle",
+    "hs_legal_basis",
     "meem_demo_status",
     "meem_demo_requested_at",
     "meem_demo_verified_at",
@@ -33,10 +34,26 @@ Transport = Callable[[str, str, dict[str, Any] | None], tuple[int, dict[str, Any
 
 
 class HubSpotError(Exception):
-    def __init__(self, operation: str, status: int) -> None:
+    def __init__(self, operation: str, status: int, *, missing_properties: tuple[str, ...] = ()) -> None:
         self.operation = operation
         self.status = status
+        self.missing_properties = missing_properties
         super().__init__(f"HubSpot {operation} failed")
+
+
+def _missing_properties(body: dict[str, Any] | None) -> tuple[str, ...]:
+    if not isinstance(body, dict):
+        return ()
+    texts = [str(body.get("message") or "")]
+    errors = body.get("errors")
+    if isinstance(errors, list):
+        for item in errors:
+            if isinstance(item, dict):
+                texts.append(str(item.get("message") or ""))
+    joined = " ".join(texts)
+    if "hs_legal_basis" in joined and "missing" in joined.lower():
+        return ("hs_legal_basis",)
+    return ()
 
 
 def _httpx_transport(key: str) -> Transport:
@@ -89,8 +106,8 @@ class HubSpotClient:
                 return None
             if retry and attempt == 0 and status in {0, 429, 503}:
                 continue
-            raise HubSpotError(operation, status)
-        raise HubSpotError(operation, status)
+            raise HubSpotError(operation, status, missing_properties=_missing_properties(body))
+        raise HubSpotError(operation, status, missing_properties=_missing_properties(body))
 
     def find_contact_by_email(self, email: str) -> dict[str, Any] | None:
         properties = "&".join(f"properties={name}" for name in CONTACT_PROPERTIES)

@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.access.companies import company_identity
+from app.api.access.leads import _millis, _within_cooldown
 from app.api.access.tokens import issue_invitation, sign_payload
 from app.api.access.verification import issue_verification, validate_verification
 from app.api.main import create_app
@@ -149,6 +150,29 @@ def _client(monkeypatch: pytest.MonkeyPatch, **env: str) -> tuple[TestClient, Cr
 
 def _token(mail: Mail) -> str:
     return mail.verification[0][2].split("#verify=", 1)[1]
+
+
+HUBSPOT_REQUESTED_AT = "2026-10-22T17:24:07.991Z"
+HUBSPOT_REQUESTED_MS = 1_792_689_847_991
+
+
+def test_millis_accepts_digits_and_timezone_aware_iso() -> None:
+    assert _millis(HUBSPOT_REQUESTED_MS) == HUBSPOT_REQUESTED_MS
+    assert _millis(str(HUBSPOT_REQUESTED_MS)) == HUBSPOT_REQUESTED_MS
+    assert _millis(HUBSPOT_REQUESTED_AT) == HUBSPOT_REQUESTED_MS
+    assert _millis("2026-10-22T17:24:07.991+00:00") == HUBSPOT_REQUESTED_MS
+    assert _millis("2026-10-22T18:24:07.991+01:00") == HUBSPOT_REQUESTED_MS
+    assert _millis("not-a-time") is None
+    assert _millis("2026-10-22T17:24:07.991") is None
+    assert _millis(None) is None
+    assert _millis("") is None
+
+
+def test_persisted_cooldown_recognises_hubspot_iso_datetime() -> None:
+    contact = {"properties": {"meem_demo_requested_at": HUBSPOT_REQUESTED_AT}}
+    requested_second = HUBSPOT_REQUESTED_MS // 1000
+    assert _within_cooldown(contact, requested_second + 60, 600) is True
+    assert _within_cooldown(contact, requested_second + 601, 600) is False
 
 
 def test_company_identity_uses_domain_or_submitted_name() -> None:
@@ -342,6 +366,29 @@ def test_verification_grants_one_session_and_blocks_replay(monkeypatch: pytest.M
     mismatch = mismatched.post("/api/v1/demo-access/verify", json={"token": token})
     assert mismatch.status_code == 401
     assert mismatch.json()["error"]["code"] == "DEMO_VERIFY_INVALID"
+
+
+def test_owner_summary_formats_iso_requested_time(monkeypatch: pytest.MonkeyPatch) -> None:
+    client, crm, mail = _client(monkeypatch, MEEM_DEMO_OWNER_EMAIL="owner@example.com")
+    token, verification_id, _expires = issue_verification(KEY, "req-iso")
+    crm.contacts.append(
+        {
+            "id": "8",
+            "properties": {
+                "email": "ada@example.com",
+                "firstname": "Ada",
+                "lastname": "North",
+                "jobtitle": "Researcher",
+                "meem_demo_request_id": "req-iso",
+                "meem_demo_verification_jti": verification_id,
+                "meem_demo_status": "EMAIL_VERIFICATION_SENT",
+                "meem_demo_requested_at": HUBSPOT_REQUESTED_AT,
+            },
+        }
+    )
+    granted = client.post("/api/v1/demo-access/verify", json={"token": token})
+    assert granted.status_code == 200
+    assert mail.owner[0][1]["requested"] == "2026-10-22T17:24:07Z"
 
 
 def test_manual_invite_logout_and_analysis_gate_remain(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -1,6 +1,8 @@
 # Gated demonstration
 
-Market Regime Monitor can be published as one container with individually issued, expiring access. This is a controlled demonstration. It is not a client portal.
+Market Regime Monitor can be published as one container. Visitors request access themselves and open it after verifying an email address. Operators can still issue an invitation directly. This is a controlled demonstration. It is not a client portal.
+
+The self-service flow is described in `docs/SELF_SERVICE_DEMO.md`. HubSpot property setup is described in `docs/HUBSPOT_SETUP.md`.
 
 ## Purpose
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hmac
 import logging
 import secrets
+from datetime import datetime, timezone
 from typing import Any
 
 from app.api.access.companies import company_identity
@@ -75,7 +76,19 @@ def _millis(value: object) -> int | None:
     text = str(value).strip()
     if text.isdigit():
         return int(text)
-    return None
+    if text.endswith(("Z", "z")):
+        text = f"{text[:-1]}+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return None
+    try:
+        delta = parsed.astimezone(timezone.utc) - datetime(1970, 1, 1, tzinfo=timezone.utc)
+    except (OverflowError, OSError, ValueError):
+        return None
+    return delta.days * 86_400_000 + delta.seconds * 1000 + delta.microseconds // 1000
 
 
 def _properties(contact: dict[str, Any]) -> dict[str, Any]:

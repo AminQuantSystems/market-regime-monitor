@@ -29,4 +29,5 @@ def install_frontend(app: FastAPI) -> None:
         return FileResponse(index)
 
     app.add_api_route("/access", spa, methods=["GET"], include_in_schema=False)
+    app.add_api_route("/privacy", spa, methods=["GET"], include_in_schema=False)
     app.add_api_route("/", spa, methods=["GET"], include_in_schema=False)

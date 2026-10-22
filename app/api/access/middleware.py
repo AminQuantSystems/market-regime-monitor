@@ -20,6 +20,10 @@ _PUBLIC = {
     ("GET", "/api/v1/public/demo-access"),
     ("POST", "/api/v1/auth/exchange"),
     ("POST", "/api/v1/auth/logout"),
+    ("POST", "/api/v1/demo-access/request"),
+    ("POST", "/api/v1/demo-access/verify"),
+    ("GET", "/privacy"),
+    ("HEAD", "/privacy"),
 }
 
 

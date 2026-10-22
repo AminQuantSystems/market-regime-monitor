@@ -31,6 +31,19 @@ class RateLimitExceeded(Exception):
         super().__init__("rate limit")
 
 
+def attach_session(response: JSONResponse, token: str, expires_at: int) -> None:
+    remaining = expires_at - current_unix_time()
+    response.set_cookie(
+        COOKIE_NAME,
+        token,
+        max_age=max(0, remaining),
+        httponly=True,
+        secure=cookie_secure(),
+        samesite="lax",
+        path="/",
+    )
+
+
 def enforce_analyse_limit(request: Request) -> None:
     if not access_required():
         return
@@ -87,17 +100,8 @@ def register_access_routes(app: FastAPI) -> None:
                 status_code=401,
                 content={"error": {"code": exc.code, "message": exc.message, "category": "request"}},
             )
-        remaining = int(invitation["exp"]) - current_unix_time()
         response = JSONResponse({"status": "ok"})
-        response.set_cookie(
-            COOKIE_NAME,
-            body.token,
-            max_age=max(0, remaining),
-            httponly=True,
-            secure=cookie_secure(),
-            samesite="lax",
-            path="/",
-        )
+        attach_session(response, body.token, int(invitation["exp"]))
         return response
 
     @app.post("/api/v1/auth/logout")

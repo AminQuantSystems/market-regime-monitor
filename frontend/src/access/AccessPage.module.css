@@ -9,6 +9,7 @@
 }
 
 .panel {
+  position: relative;
   width: min(640px, 100%);
   padding: 32px 28px;
   background: var(--meem-dark-surface-1);
@@ -57,6 +58,56 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-decoration: none;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--meem-dark-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.form input,
+.form textarea {
+  color: var(--meem-dark-text-primary);
+  background: var(--meem-dark-canvas);
+  border: 1px solid var(--meem-dark-border-interactive);
+  border-radius: 2px;
+  color-scheme: dark;
+  font: inherit;
+  font-size: 15px;
+  letter-spacing: 0;
+  font-weight: 400;
+  padding: 8px 10px;
+}
+
+.form textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.form button {
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
 
 .support,

@@ -20,6 +20,7 @@ def verification_text(first_name: str, link: str) -> str:
         "Verify and Access Demo\n"
         f"{link}\n\n"
         "This verification link expires in 30 minutes.\n\n"
+        "For your security, please use ‘End Demo Session’ when you have finished, particularly on a shared device.\n\n"
         "Market Regime Monitor is analytical research software. It does not provide investment recommendations, "
         "trade signals or price predictions.\n\n"
         "MEEM Technologies\n"

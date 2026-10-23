@@ -30,6 +30,8 @@ describe("demonstration access page", () => {
     expect(screen.getByText(/administer demonstration access/)).toBeInTheDocument()
     expect(screen.getByText(/do not upload confidential, personal or client data/)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Request Demo Access" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "End Demo Session" })).not.toBeInTheDocument()
+    expect(screen.queryByText(/For your security, please end your demo session/)).not.toBeInTheDocument()
     expect(screen.queryByRole("link", { name: "Request Demo Access" })).not.toBeInTheDocument()
   })
 

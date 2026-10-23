@@ -265,6 +265,12 @@ def test_email_sender_builds_verification_without_calling_azure_when_injected() 
     assert sent[0][1] == "Market Regime Monitor — Verify Demo Access"
     assert sent[0][2] == verification_text("Ada", "https://demo.example/access#verify=abc")
     assert "investment recommendations" in sent[0][2]
+    body = sent[0][2]
+    security = "For your security, please use ‘End Demo Session’ when you have finished, particularly on a shared device."
+    assert body.index("https://demo.example/access#verify=abc") < body.index(security)
+    assert body.index("This verification link expires in 30 minutes.") < body.index(security)
+    sender.send_owner_notification(to="owner@example.com", summary={"name": "Ada"})
+    assert security not in sent[1][2]
 
 
 def test_request_validation_honeypot_and_crm_failure(monkeypatch: pytest.MonkeyPatch) -> None:

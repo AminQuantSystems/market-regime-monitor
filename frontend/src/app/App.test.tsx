@@ -45,6 +45,12 @@ describe("Market State Board", () => {
     expect(screen.getByText("D M V R")).toBeInTheDocument()
     expect(screen.getAllByText("—").length).toBeGreaterThan(0)
     expect(screen.getByText("N/A")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "End Demo Session" })).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "For your security, please end your demo session when you have finished, particularly when using a shared device.",
+      ),
+    ).toBeInTheDocument()
     expect(screen.getByText("DEMO DATA")).toBeInTheDocument()
     expect(screen.getByText("VALID")).toBeInTheDocument()
     expect(screen.getByText("2026-03-01")).toBeInTheDocument()

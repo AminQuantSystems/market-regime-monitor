@@ -65,9 +65,14 @@ export function ApplicationHeader({
           ) : null}
         </dl>
       ) : null}
-      <button className={styles.endSession} type="button" onClick={onEndSession}>
-        End Demo Session
-      </button>
+      <div className={styles.session}>
+        <button className={styles.endSession} type="button" onClick={onEndSession}>
+          End Demo Session
+        </button>
+        <p className={styles.sessionReminder}>
+          For your security, please end your demo session when you have finished, particularly when using a shared device.
+        </p>
+      </div>
     </header>
   )
 }

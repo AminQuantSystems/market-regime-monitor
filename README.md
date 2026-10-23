@@ -6,6 +6,14 @@ A deterministic market-state analytics application. It reduces major equity mark
 
 The same validated input always produces the same result. Disagreements between the four dimensions are preserved. There is no fifth, composite regime. The name uses regime for that visible four-part state, not for a single hidden score.
 
+## Live demonstration
+
+A gated interactive demonstration is available for institutional evaluation.
+
+[**Request Demo Access**](https://ca-market-regime-monitor-demo.wittysea-10c48c15.uksouth.azurecontainerapps.io)
+
+Access is email-verified. The hosted demonstration uses the same analytical application described in this repository; it remains analytical research software and does not provide investment recommendations, trade signals, or price predictions.
+
 ## What it does
 
 Market Regime Monitor reads one price panel and classifies each enabled market at one explicit as-of date. The board is the first view. The detail panel explains the selected market with the measurement, the state label, the reason code, and the categorical change.

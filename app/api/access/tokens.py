@@ -78,8 +78,12 @@ def validate_invitation(
     try:
         supplied_signature = _b64url_decode(signature_segment)
         expected_signature = hmac.new(key.encode("utf-8"), segment.encode("ascii"), hashlib.sha256).digest()
+        canonical_signature = _b64url(supplied_signature).encode("ascii")
+        supplied_text = signature_segment.encode("ascii")
     except (ValueError, UnicodeEncodeError):
         raise InvitationError("DEMO_INVITE_MALFORMED", "This invitation is not valid.") from None
+    if not hmac.compare_digest(canonical_signature, supplied_text):
+        raise InvitationError("DEMO_INVITE_INVALID", "This invitation is not valid.")
     if len(supplied_signature) != len(expected_signature) or not hmac.compare_digest(supplied_signature, expected_signature):
         raise InvitationError("DEMO_INVITE_INVALID", "This invitation is not valid.")
     try:

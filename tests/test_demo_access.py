@@ -52,11 +52,25 @@ def test_valid_invitation_round_trip() -> None:
 
 
 def test_invalid_signature_is_rejected() -> None:
-    token, _invitation_id, _expires_at = _live_invite()
-    broken = token[:-1] + ("A" if token[-1] != "A" else "B")
+    token, _invitation_id, _expires_at = issue_invitation(KEY, now=NOW)
+    segment, signature = token.split(".", 1)
+    broken_signature = ("A" if not signature.startswith("A") else "B") + signature[1:]
     with pytest.raises(Exception) as caught:
-        validate_invitation(broken, KEY, now=NOW)
+        validate_invitation(f"{segment}.{broken_signature}", KEY, now=NOW)
     assert caught.value.code == "DEMO_INVITE_INVALID"
+
+
+def test_noncanonical_signature_encoding_is_rejected() -> None:
+    token, _invitation_id, _expires_at = issue_invitation(KEY, now=NOW)
+    segment, signature = token.split(".", 1)
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+    last = alphabet.index(signature[-1])
+    assert last % 4 == 0
+    noncanonical = signature[:-1] + alphabet[last + 1]
+    with pytest.raises(Exception) as caught:
+        validate_invitation(f"{segment}.{noncanonical}", KEY, now=NOW)
+    assert caught.value.code == "DEMO_INVITE_INVALID"
+    assert validate_invitation(token, KEY, now=NOW)["exp"] == _expires_at
 
 
 def test_expired_invitation_is_rejected() -> None:
